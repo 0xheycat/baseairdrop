@@ -32,11 +32,11 @@ export async function GET(req: NextRequest) {
           : '#ef4444'
 
   const scoreLabel =
-    scoreNum >= 80 ? 'Excellent'
-      : scoreNum >= 60 ? 'Strong'
-        : scoreNum >= 40 ? 'Moderate'
-          : scoreNum >= 20 ? 'Low'
-            : 'Minimal'
+    scoreNum >= 80 ? 'EXCELLENT'
+      : scoreNum >= 60 ? 'STRONG'
+        : scoreNum >= 40 ? 'MODERATE'
+          : scoreNum >= 20 ? 'LOW'
+            : 'MINIMAL'
 
   const tier =
     scoreNum >= 80 ? 'S-TIER'
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : ''
 
-  // Await fonts — if fetch fails, proceed without custom fonts
+  // Await fonts
   const [regularFont, boldFont, blackFont] = await Promise.all([
     interRegular.catch(() => undefined),
     interBold.catch(() => undefined),
@@ -70,222 +70,134 @@ export async function GET(req: NextRequest) {
           width: '600px',
           height: '400px',
           display: 'flex',
+          flexDirection: 'column',
           fontFamily: 'Inter, sans-serif',
           color: '#f1f5f9',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        {/* Background ambient glows */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '-50px',
-            left: '-30px',
-            width: '225px',
-            height: '225px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0,82,255,0.18) 0%, rgba(0,0,0,0) 70%)',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-40px',
-            right: '-20px',
-            width: '190px',
-            height: '190px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, rgba(0,0,0,0) 70%)',
-          }}
-        />
+        {/* Ambient glows - transparent replaced with rgba(0,0,0,0) for Satori */}
+        <div style={{
+          position: 'absolute', top: '-75px', left: '-50px',
+          width: '300px', height: '300px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(0,82,255,0.2) 0%, rgba(0,0,0,0) 70%)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-60px', right: '-40px',
+          width: '250px', height: '250px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(0,0,0,0) 70%)',
+        }} />
 
-        {/* Left column — Score */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '220px',
-            padding: '20px 10px 20px 20px',
-          }}
-        >
-          {/* Score ring */}
-          <div
-            style={{
-              width: '110px',
-              height: '110px',
-              borderRadius: '50%',
-              border: `6px solid ${scoreColor}`,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <span style={{ fontSize: '39px', fontWeight: '900', color: scoreColor, lineHeight: 1 }}>
-              {score}
-            </span>
-            <span style={{ fontSize: '8px', color: '#475569', fontWeight: '500', marginTop: '1px' }}>
-              / 100
-            </span>
+        {/* Top bar: Brand + User */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 20px 0 20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{
+              width: '18px', height: '18px', borderRadius: '50%', background: '#0052FF',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'white' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '-0.3px' }}>Base Checker</span>
+              <span style={{ fontSize: '7px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#f59e0b' }}>Unofficial Estimate</span>
+            </div>
           </div>
 
-          {/* Labels */}
-          <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
-            <span
-              style={{
-                fontSize: '8px',
-                fontWeight: '700',
-                color: scoreColor,
-                padding: '2px 7px',
-                borderRadius: '999px',
-                background: `${scoreColor}15`,
-              }}
-            >
-              {scoreLabel}
+          {/* User badge */}
+          {(username || truncAddr) && (
+            <span style={{
+              fontSize: '9px', fontWeight: 600, color: '#94a3b8',
+              background: 'rgba(255,255,255,0.04)',
+              padding: '3px 8px', borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              {username ? `@${username}` : truncAddr}
             </span>
-            <span
-              style={{
-                fontSize: '6px',
-                fontWeight: '800',
-                color: '#f59e0b',
-                padding: '2px 5px',
-                borderRadius: '999px',
-                background: 'rgba(245,158,11,0.1)',
+          )}
+        </div>
+
+        {/* Main content - centered row */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flex: 1, gap: '24px', padding: '0 20px',
+        }}>
+          {/* Score circle */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{
+              width: '110px', height: '110px', borderRadius: '50%',
+              border: `6px solid ${scoreColor}`,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{ fontSize: '40px', fontWeight: 900, color: scoreColor, lineHeight: '1' }}>{score}</span>
+              <span style={{ fontSize: '10px', color: '#475569', fontWeight: 500, marginTop: '2px' }}>/ 100</span>
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '4px', marginTop: '8px',
+            }}>
+              <span style={{
+                fontSize: '9px', fontWeight: 800, color: scoreColor,
+                padding: '2px 8px', borderRadius: '999px', background: 'rgba(255,255,255,0.06)',
+              }}>{scoreLabel}</span>
+              <span style={{
+                fontSize: '8px', fontWeight: 900, color: '#f59e0b',
+                padding: '2px 6px', borderRadius: '999px', background: 'rgba(245,158,11,0.12)',
                 letterSpacing: '1px',
-              }}
-            >
-              {tier}
-            </span>
+              }}>{tier}</span>
+            </div>
+          </div>
+
+          {/* Right side: stats */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, maxWidth: '280px' }}>
+            {/* Big value card */}
+            <div style={{
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '10px', padding: '12px 14px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '7px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#475569' }}>Estimated Allocation</span>
+                <span style={{ fontSize: '22px', fontWeight: 900, color: '#10b981', lineHeight: '1.1', marginTop: '2px' }}>{tokens} <span style={{ fontSize: '9px', fontWeight: 600, color: '#334155' }}>tokens</span></span>
+              </div>
+              <div style={{
+                width: '30px', height: '30px', borderRadius: '8px',
+                background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <span style={{ fontSize: '16px', fontWeight: 900, color: '#10b981' }}>$</span>
+              </div>
+            </div>
+
+            {/* 2-col grid */}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{
+                flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '8px', padding: '8px 10px',
+              }}>
+                <span style={{ fontSize: '7px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#475569' }}>Est. Value</span>
+                <span style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#0052FF', marginTop: '2px' }}>{value}</span>
+              </div>
+              <div style={{
+                flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '8px', padding: '8px 10px',
+              }}>
+                <span style={{ fontSize: '7px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: '#475569' }}>Token Price</span>
+                <span style={{ display: 'block', fontSize: '14px', fontWeight: 800, color: '#a78bfa', marginTop: '2px' }}>$4.00</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Right column — Stats */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            flex: 1,
-            padding: '18px 20px 18px 8px',
-            gap: '8px',
-          }}
-        >
-          {/* Header row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div
-                style={{
-                  width: '19px',
-                  height: '19px',
-                  borderRadius: '50%',
-                  background: '#0052FF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'white' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '10px', fontWeight: '800', letterSpacing: '-0.3px' }}>
-                  Base Checker
-                </span>
-                <span style={{ fontSize: '5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#f59e0b' }}>
-                  Unofficial Estimate
-                </span>
-              </div>
-            </div>
-
-            {/* User badge */}
-            {(username || truncAddr) && (
-              <span style={{
-                fontSize: '7px', fontWeight: '600', color: '#64748b',
-                background: 'rgba(255,255,255,0.04)',
-                padding: '3px 7px', borderRadius: '999px',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                {username ? `@${username}` : truncAddr}
-              </span>
-            )}
-          </div>
-
-          {/* Big allocation card */}
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '8px',
-              padding: '10px 12px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#475569' }}>
-                Estimated Allocation
-              </span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px', marginTop: '2px' }}>
-                <span style={{ fontSize: '18px', fontWeight: '900', color: '#10b981' }}>
-                  {tokens}
-                </span>
-                <span style={{ fontSize: '7px', fontWeight: '600', color: '#334155' }}>tokens</span>
-              </div>
-            </div>
-            <div style={{
-              width: '24px', height: '24px', borderRadius: '6px',
-              background: 'rgba(16,185,129,0.1)',
-              border: '1px solid rgba(16,185,129,0.15)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ fontSize: '12px', fontWeight: '900', color: '#10b981' }}>$</span>
-            </div>
-          </div>
-
-          {/* 2-col stats */}
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <div
-              style={{
-                flex: 1,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '6px',
-                padding: '7px 8px',
-              }}
-            >
-              <span style={{ fontSize: '5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#475569' }}>
-                Est. Value
-              </span>
-              <span style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#0052FF', marginTop: '2px' }}>
-                {value}
-              </span>
-            </div>
-            <div
-              style={{
-                flex: 1,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                borderRadius: '6px',
-                padding: '7px 8px',
-              }}
-            >
-              <span style={{ fontSize: '5px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: '#475569' }}>
-                Token Price
-              </span>
-              <span style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#a78bfa', marginTop: '2px' }}>
-                $4.00
-              </span>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px' }}>
-            <span style={{ fontSize: '6px', color: '#1e293b', fontFamily: 'monospace' }}>{truncAddr}</span>
-            <span style={{ fontSize: '6px', color: '#1e293b' }}>baseairdrop-mu.vercel.app</span>
-          </div>
+        {/* Bottom bar */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 20px 12px 20px',
+        }}>
+          <span style={{ fontSize: '8px', color: '#1e293b', fontFamily: 'monospace' }}>{truncAddr}</span>
+          <span style={{ fontSize: '8px', color: '#1e293b' }}>baseairdrop-mu.vercel.app</span>
         </div>
       </div>
     ),
