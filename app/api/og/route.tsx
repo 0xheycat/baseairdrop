@@ -3,6 +3,20 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
+// Fetch Inter font at module level so it is reused across invocations
+// on the same edge isolate.
+const interRegular = fetch(
+  new URL('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiJ-Ek-_EeA.woff2')
+).then((res) => res.arrayBuffer())
+
+const interBold = fetch(
+  new URL('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuGKYAZ9hiJ-Ek-_EeA.woff2')
+).then((res) => res.arrayBuffer())
+
+const interBlack = fetch(
+  new URL('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hiJ-Ek-_EeA.woff2')
+).then((res) => res.arrayBuffer())
+
 export async function GET(req: NextRequest) {
   const score = req.nextUrl.searchParams.get('score') || '0'
   const address = req.nextUrl.searchParams.get('address') || ''
@@ -35,15 +49,28 @@ export async function GET(req: NextRequest) {
     ? `${address.slice(0, 6)}...${address.slice(-4)}`
     : ''
 
+  // Await fonts — if fetch fails, proceed without custom fonts
+  const [regularFont, boldFont, blackFont] = await Promise.all([
+    interRegular.catch(() => undefined),
+    interBold.catch(() => undefined),
+    interBlack.catch(() => undefined),
+  ])
+
+  const fonts = [
+    regularFont && { name: 'Inter', data: regularFont, weight: 400 as const, style: 'normal' as const },
+    boldFont && { name: 'Inter', data: boldFont, weight: 700 as const, style: 'normal' as const },
+    blackFont && { name: 'Inter', data: blackFont, weight: 900 as const, style: 'normal' as const },
+  ].filter(Boolean) as { name: string; data: ArrayBuffer; weight: 400 | 700 | 900; style: 'normal' }[]
+
   return new ImageResponse(
     (
       <div
         style={{
           background: '#0a0a0f',
-          width: '100%',
-          height: '100%',
+          width: '600px',
+          height: '400px',
           display: 'flex',
-          fontFamily: 'Inter, system-ui, sans-serif',
+          fontFamily: 'Inter, sans-serif',
           color: '#f1f5f9',
           position: 'relative',
           overflow: 'hidden',
@@ -58,7 +85,7 @@ export async function GET(req: NextRequest) {
             width: '225px',
             height: '225px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(0,82,255,0.18) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(0,82,255,0.18) 0%, rgba(0,0,0,0) 70%)',
           }}
         />
         <div
@@ -69,7 +96,7 @@ export async function GET(req: NextRequest) {
             width: '190px',
             height: '190px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, rgba(0,0,0,0) 70%)',
           }}
         />
 
@@ -265,6 +292,7 @@ export async function GET(req: NextRequest) {
     {
       width: 600,
       height: 400,
+      ...(fonts.length > 0 ? { fonts } : {}),
     }
   )
 }
