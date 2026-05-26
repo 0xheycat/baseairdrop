@@ -120,12 +120,16 @@ export async function getWalletMetrics(address: string): Promise<WalletMetrics> 
     return cached.data
   }
 
-  // Parallel fetch: counters + recent transactions + balance
-  const [counters, txs, ethBalance] = await Promise.all([
+  // Parallel fetch: counters + recent transactions + balance (use allSettled to handle partial failures)
+  const results = await Promise.allSettled([
     getAddressCounters(normalized),
     getTransactions(normalized, 3),
     getBalance(normalized),
   ])
+
+  const counters = results[0].status === 'fulfilled' ? results[0].value : null
+  const txs = results[1].status === 'fulfilled' ? results[1].value : []
+  const ethBalance = results[2].status === 'fulfilled' ? results[2].value : 0
 
   // Count unique active days from recent transactions
   const uniqueDays = new Set<string>()
@@ -149,6 +153,8 @@ export async function getWalletMetrics(address: string): Promise<WalletMetrics> 
     contractCount: contracts.size,
     ethBalance,
   }
+
+  console.log(`[Blockscout] Metrics for ${normalized}:`, data)
 
   // Cache the result
   cache.set(cacheKey, { data, timestamp: Date.now() })
