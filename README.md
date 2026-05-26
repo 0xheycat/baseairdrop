@@ -1,0 +1,154 @@
+# Base Checker - Airdrop Allocation Estimator
+
+> **Unofficial** Farcaster mini app that analyzes your Base L2 on-chain activity and estimates a hypothetical airdrop allocation.
+
+**Live:** [base-checker.vercel.app](https://base-checker.vercel.app)
+
+---
+
+## What Is This?
+
+Base Checker is a Farcaster mini app that scans any Base L2 wallet address and returns an activity score (0-100) based on on-chain metrics. It then uses a customizable model to estimate what a hypothetical BASE token airdrop allocation could look like.
+
+**No official BASE token or airdrop has been announced.** This tool is purely speculative and for entertainment purposes only.
+
+---
+
+## Why Speculate on a Base Airdrop?
+
+Several signals suggest Base may eventually launch a token:
+
+### On-Chain Signals
+- **Base has no token** - Unlike Optimism (OP), Arbitrum (ARB), and zkSync (ZK), Base is the only major L2 without a native token
+- **Coinbase publicly traded** - A Base token could be structured to comply with SEC regulations under the new crypto-friendly administration
+- **Jesse Pollack (Base lead)** has repeatedly said "no plans right now" - leaving the door open for the future
+- **Base is the #1 L2 by TVL** - A token launch would be one of the largest airdrops in crypto history
+
+### Historical Precedent
+| L2 | Token Launch | Airdrop Size | Eligible Wallets |
+|---|---|---|---|
+| Optimism (OP) | May 2022 | ~$400M+ | ~250K |
+| Arbitrum (ARB) | Mar 2023 | ~$1.5B+ | ~625K |
+| zkSync (ZK) | Jun 2024 | ~$900M+ | ~695K |
+| Starknet (STRK) | Feb 2024 | ~$700M+ | ~1.3M |
+| **Base (???)** | **TBD** | **$2-10B+?** | **1M+?** |
+
+### What Activities Might Count?
+
+Based on how other L2s structured their airdrops, these activities are likely to matter:
+
+1. **Transaction volume & count** - More transactions = more engagement
+2. **Active days on-chain** - Consistent usage over time (not just airdrop farming)
+3. **Smart contract interactions** - DeFi, NFTs, governance, bridge usage
+4. **ETH balance held** - Skin in the game
+5. **Early adoption** - Wallets active before a snapshot date
+6. **Bridge activity** - Depositing ETH into Base from Ethereum mainnet
+7. **Ecosystem participation** - Using Base-native dApps (Aerodrome, Uniswap on Base, etc.)
+
+### Estimated Timeline
+
+- **2024**: Base launched, no token, focused on ecosystem growth
+- **2025**: Base surpasses all L2s in TVL and daily transactions
+- **2026**: Speculation intensifies; Coinbase may be waiting for regulatory clarity
+- **2026-2027**: Most likely window for a token announcement (if it happens)
+
+---
+
+## How the Score Works
+
+The activity score is weighted across four on-chain metrics:
+
+| Metric | Weight | Max Benchmark | Source |
+|---|---|---|---|
+| Transaction count | 35% | 500 txs | Blockscout API |
+| Active days | 30% | 180 days | Blockscout API |
+| Contract interactions | 20% | 50 contracts | Blockscout API |
+| ETH balance | 15% | 10 ETH | Blockscout API |
+
+The estimation model uses customizable parameters:
+
+- **FDV (Fully Diluted Valuation)**: $2B - $12B range
+- **Total Supply**: 1B / 5B / 10B tokens
+- **Airdrop Pool**: 2.5% - 20% of supply
+- **Recipients**: 50K - 1M wallets
+
+### Example Calculation
+```
+FDV = $4B, Supply = 1B, Pool = 10%, Recipients = 200K, Score = 72
+
+Token Price    = $4B / 1B = $4.00
+Pool Size      = 1B * 10% = 100M tokens
+Avg Allocation = 100M / 200K = 500 tokens
+User Allocation = 500 * (72/100) = 360 tokens
+Estimated Value = 360 * $4.00 = $1,440
+```
+
+---
+
+## Farcaster Mini App
+
+This app is built as a [Farcaster Mini App](https://miniapps.farcaster.xyz/):
+
+- **Auto wallet detection** via FID verified addresses (Neynar API)
+- **Frame sharing** - share results as interactive Farcaster frames
+- **Mobile-first** - optimized for Farcaster client (375-424px)
+- **Dark glassmorphism** UI with Base branding
+
+---
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS + dark glassmorphism
+- **Farcaster SDK**: `@farcaster/miniapp-sdk`
+- **Profiles**: Neynar API (FID, verified wallets)
+- **On-chain data**: Blockscout API (free, no API key)
+- **Deploy**: Vercel
+
+---
+
+## Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Set environment variables
+cp .env.example .env.local
+# Add your NEYNAR_API_KEY
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEYNAR_API_KEY` | Yes | Neynar API key for Farcaster data |
+| `NEXT_PUBLIC_APP_URL` | Yes | Your deployed URL |
+
+---
+
+## Deploy to Vercel
+
+1. Fork this repo
+2. Connect to [vercel.com](https://vercel.com)
+3. Add `NEYNAR_API_KEY` in environment variables
+4. Deploy
+5. Sign your manifest at `farcaster.xyz/~/developers/mini-apps/manifest`
+
+---
+
+## Disclaimer
+
+This is an **unofficial, hypothetical tool** for entertainment purposes only. It is not affiliated with Base, Coinbase, or any related entity. No official BASE token or airdrop has been announced. The estimates generated by this tool are speculative and should not be considered financial advice. Always do your own research.
+
+---
+
+## License
+
+MIT
