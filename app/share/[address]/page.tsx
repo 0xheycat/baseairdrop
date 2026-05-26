@@ -20,9 +20,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let pfpUrl = ''
 
   try {
-    // Fetch on-chain data
+    // Fetch on-chain data with timeout
     console.log(`[OG] Fetching metrics for address: ${address}`)
-    const metrics = await getWalletMetrics(address)
+    const metricsPromise = getWalletMetrics(address)
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Metrics fetch timeout')), 8000)
+    )
+    const metrics = await Promise.race([metricsPromise, timeoutPromise]) as any
     console.log(`[OG] Metrics received:`, metrics)
     
     const score = computeActivityScore(metrics)
@@ -37,11 +41,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title = `Base Checker: Score ${score.overall}/100 - ${ogTokens} tokens`
     description = `Estimated allocation: ${ogTokens} tokens (~${ogValue})`
 
-    // Fetch Farcaster profile for the OG image
+    // Fetch Farcaster profile for the OG image (with timeout)
     try {
-      const fid = await fetchFidByAddress(address)
+      const fidPromise = fetchFidByAddress(address)
+      const fidTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('FID fetch timeout')), 3000)
+      )
+      const fid = await Promise.race([fidPromise, fidTimeoutPromise]) as any
       if (fid) {
-        const user = await fetchUserByFid(fid)
+        const userPromise = fetchUserByFid(fid)
+        const userTimeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('User fetch timeout')), 3000)
+        )
+        const user = await Promise.race([userPromise, userTimeoutPromise]) as any
         if (user) {
           username = user.username || ''
           pfpUrl = user.pfpUrl || ''
