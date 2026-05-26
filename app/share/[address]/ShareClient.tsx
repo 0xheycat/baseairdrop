@@ -9,7 +9,7 @@ import { DEFAULT_PARAMS, computeAllocation } from '@/lib/estimation'
 import type { ModelParams, AllocationResult } from '@/lib/estimation'
 import type { ActivityScore } from '@/lib/scoring'
 import type { WalletMetrics } from '@/lib/blockscout'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, User } from 'lucide-react'
 import Link from 'next/link'
 
 interface ShareClientProps {
@@ -17,6 +17,8 @@ interface ShareClientProps {
   initialScore: ActivityScore
   initialMetrics: WalletMetrics
   initialAllocation: AllocationResult
+  username?: string
+  pfpUrl?: string
 }
 
 export default function ShareClient({
@@ -24,6 +26,8 @@ export default function ShareClient({
   initialScore,
   initialMetrics,
   initialAllocation,
+  username,
+  pfpUrl,
 }: ShareClientProps) {
   const [params, setParams] = useState<ModelParams>(DEFAULT_PARAMS)
   const [allocation, setAllocation] = useState(initialAllocation)
@@ -46,6 +50,32 @@ export default function ShareClient({
         />
         Back to Checker
       </Link>
+
+      {/* Farcaster profile badge */}
+      {username && (
+        <div
+          className="glass-card-sm flex items-center gap-3 px-4 py-3"
+          role="status"
+          aria-label={`Results for @${username}`}
+        >
+          {pfpUrl ? (
+            <img
+              src={pfpUrl}
+              alt={`${username}'s profile picture`}
+              className="h-10 w-10 rounded-full ring-2 ring-blue-500/20 object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/20">
+              <User className="h-5 w-5 text-blue-400" />
+            </div>
+          )}
+          <div>
+            <span className="block text-sm font-bold text-blue-200">@{username}</span>
+            <span className="text-[10px] text-gray-500">Farcaster Profile</span>
+          </div>
+        </div>
+      )}
 
       <ResultsDashboard
         address={address}

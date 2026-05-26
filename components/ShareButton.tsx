@@ -1,7 +1,7 @@
 'use client'
 
-import { Share2, Loader2, ExternalLink, Check, Camera } from 'lucide-react'
-import { useState, useCallback, useRef } from 'react'
+import { Share2, Loader2, ExternalLink, Check, Camera, Trophy, Swords, Zap } from 'lucide-react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { safeComposeCast } from '@/lib/miniapp'
 import { formatNumber, formatUSD } from '@/lib/estimation'
 import type { AllocationResult } from '@/lib/estimation'
@@ -12,18 +12,77 @@ interface ShareButtonProps {
   address: string
   score: ActivityScore
   allocation: AllocationResult
+  username?: string
 }
 
-export default function ShareButton({ address, score, allocation }: ShareButtonProps) {
+const TIER_MAP: Record<number, { tier: string; emoji: string; flavor: string }> = {
+  90: { tier: 'S-TIER LEGEND', emoji: '🏆', flavor: 'Wallet is absolutely cooked with on-chain activity' },
+  80: { tier: 'S-TIER', emoji: '🔥', flavor: 'Elite degen energy detected' },
+  70: { tier: 'A-TIER', emoji: '⚡', flavor: 'Strong on-chain presence' },
+  60: { tier: 'A-TIER', emoji: '💪', flavor: 'Solid wallet activity' },
+  50: { tier: 'B-TIER', emoji: '📊', flavor: 'Decent on-chain footprint' },
+  40: { tier: 'B-TIER', emoji: '👀', flavor: 'Room to level up' },
+  30: { tier: 'C-TIER', emoji: '🌱', flavor: 'Getting started on Base' },
+  20: { tier: 'C-TIER', emoji: '🐌', flavor: 'Low activity wallet' },
+  10: { tier: 'D-TIER', emoji: '😴', flavor: 'Ghost wallet vibes' },
+  0: { tier: 'D-TIER', emoji: '👻', flavor: 'Basically invisible on Base' },
+}
+
+function getTier(score: number) {
+  const thresholds = [90, 80, 70, 60, 50, 40, 30, 20, 10, 0]
+  const threshold = thresholds.find(t => score >= t) ?? 0
+  return TIER_MAP[threshold]
+}
+
+const SHARE_VARIANTS = [
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number) =>
+    `${t.emoji} Just checked my Base allocation — ${t.tier}\n\n` +
+    `🎯 Score: ${score}/100\n` +
+    `🪙 Est. ${tokens} tokens (~${value})\n` +
+    `${t.flavor}\n\n` +
+    `Think you can beat my score? 👇`,
+
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number) =>
+    `${t.emoji} BASE AIRDROP SCORE: ${score}/100 — ${t.tier}\n\n` +
+    `💰 Potential allocation: ${tokens} tokens (~${value})\n` +
+    `📈 ${t.flavor}\n\n` +
+    `Drop your score below 👇🔥`,
+
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number) =>
+    `${t.emoji} ${t.tier} on Base Checker!\n\n` +
+    `Score: ${score}/100\n` +
+    `Est. ${tokens} tokens (~${value})\n` +
+    `${t.flavor}\n\n` +
+    `Can you beat my score? 🏆`,
+
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number) =>
+    `🔮 My Base airdrop prediction just dropped\n\n` +
+    `${t.emoji} ${t.tier} — ${score}/100\n` +
+    `🪙 ${tokens} tokens (~${value})\n\n` +
+    `${t.flavor}\n\n` +
+    `Check yours 👇`,
+]
+
+export default function ShareButton({ address, score, allocation, username }: ShareButtonProps) {
   const [sharing, setSharing] = useState(false)
   const [shared, setShared] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
   const [showSnap, setShowSnap] = useState(false)
   const snapRef = useRef<HTMLDivElement>(null)
 
-  const shareText = `My Base airdrop estimate: ${formatNumber(allocation.userAllocation)} tokens (~${formatUSD(allocation.estimatedValue)}) | Score: ${score.overall}/100\n\nCheck yours:`
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
   const shareUrl = `${baseUrl}/share/${address}`
+
+  const tier = useMemo(() => getTier(score.overall), [score.overall])
+  const tokens = formatNumber(allocation.userAllocation)
+  const value = formatUSD(allocation.estimatedValue)
+
+  // Pick a random variant for variety
+  const shareText = useMemo(() => {
+    const idx = Math.floor(Math.random() * SHARE_VARIANTS.length)
+    return SHARE_VARIANTS[idx](tier, tokens, value, score.overall)
+  }, [tier, tokens, value, score.overall])
+
   const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(shareUrl)}`
 
   const handleShare = useCallback(async () => {
@@ -46,20 +105,15 @@ export default function ShareButton({ address, score, allocation }: ShareButtonP
     setShareError(null)
 
     try {
-      // Dynamic import html-to-image (must be installed)
       const { toPng } = await import('html-to-image')
       const dataUrl = await toPng(snapRef.current, {
         width: 600,
         height: 600,
         pixelRatio: 2,
         backgroundColor: '#0a0a0f',
-        style: {
-          borderRadius: '0',
-          border: 'none',
-        },
+        style: { borderRadius: '0', border: 'none' },
       })
 
-      // Try native share API first (mobile)
       if (navigator.share && navigator.canShare) {
         const blob = await fetch(dataUrl).then(r => r.blob())
         const file = new File([blob], 'base-checker-snap.png', { type: 'image/png' })
@@ -75,7 +129,6 @@ export default function ShareButton({ address, score, allocation }: ShareButtonP
         }
       }
 
-      // Fallback: compose cast with text only (image can't be embedded via SDK)
       await safeComposeCast({ text: shareText, embeds: [shareUrl] })
       setShared(true)
     } catch (err) {
@@ -89,18 +142,25 @@ export default function ShareButton({ address, score, allocation }: ShareButtonP
   const getShareIcon = () => {
     if (sharing) return <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
     if (shared) return <Check className="h-4 w-4" aria-hidden="true" />
-    return <Share2 className="h-4 w-4" aria-hidden="true" />
+    return <Swords className="h-4 w-4" aria-hidden="true" />
   }
 
   const getShareLabel = () => {
     if (sharing) return 'Sharing...'
     if (shared) return 'Shared!'
-    return 'Share on Farcaster'
+    return 'Challenge Friends'
   }
 
   return (
     <div className="space-y-2.5 animate-fadeIn stagger-5" role="region" aria-label="Share results">
-      {/* Share as cast */}
+      {/* Tier badge */}
+      <div className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-2.5">
+        <Trophy className="h-4 w-4 text-amber-400" aria-hidden="true" />
+        <span className="text-[12px] font-bold text-amber-300">{tier.tier}</span>
+        <span className="text-[11px] text-gray-500">— {tier.flavor}</span>
+      </div>
+
+      {/* Challenge friends button */}
       <button
         onClick={handleShare}
         disabled={sharing}

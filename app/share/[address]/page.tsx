@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getWalletMetrics } from '@/lib/blockscout'
 import { computeActivityScore } from '@/lib/scoring'
 import { computeAllocation, DEFAULT_PARAMS, formatNumber, formatUSD } from '@/lib/estimation'
+import { fetchFidByAddress, fetchUserByFid } from '@/lib/neynar'
 import ShareClient from './ShareClient'
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
@@ -15,8 +16,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   let ogScore = '0'
   let ogValue = '$0.00'
   let ogTokens = '0'
+  let username = ''
+  let pfpUrl = ''
 
   try {
+    // Fetch on-chain data
     const metrics = await getWalletMetrics(address)
     const score = computeActivityScore(metrics)
     const alloc = computeAllocation(score.overall, DEFAULT_PARAMS)
@@ -25,11 +29,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ogValue = formatUSD(alloc.estimatedValue)
     title = `Base Checker: Score ${score.overall}/100 - ${ogTokens} tokens`
     description = `Estimated allocation: ${ogTokens} tokens (~${ogValue})`
+
+    // Fetch Farcaster profile for the OG image
+    try {
+      const fid = await fetchFidByAddress(address)
+      if (fid) {
+        const user = await fetchUserByFid(fid)
+        if (user) {
+          username = user.username || ''
+          pfpUrl = user.pfpUrl || ''
+        }
+      }
+    } catch {
+      // Profile fetch is optional
+    }
   } catch {
     // Use defaults if fetch fails
   }
 
-  const ogUrl = `${baseUrl}/api/og?score=${ogScore}&address=${address}&value=${encodeURIComponent(ogValue)}&tokens=${encodeURIComponent(ogTokens)}`
+  const ogParams = new URLSearchParams({
+    score: ogScore,
+    address,
+    value: ogValue,
+    tokens: ogTokens,
+  })
+  if (username) ogParams.set('username', username)
+  if (pfpUrl) ogParams.set('pfp', pfpUrl)
+
+  const ogUrl = `${baseUrl}/api/og?${ogParams.toString()}`
+
   const miniappEmbed = {
     version: '1',
     imageUrl: ogUrl,
@@ -60,15 +88,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SharePage({ params }: Props) {
   const address = params.address
   let initialData = null
+  let username = ''
+  let pfpUrl = ''
 
   try {
     const metrics = await getWalletMetrics(address)
     const score = computeActivityScore(metrics)
     const allocation = computeAllocation(score.overall, DEFAULT_PARAMS)
     initialData = { metrics, score, allocation }
-  } catch {
-    // initialData stays null, handled below
-  }
+
+    // Fetch Farcaster profile
+    try {
+      const fid = await fetchFidByAddress(address)
+      if (fid) {
+        const user = await fetchUserByFid(fid)
+        if (user) {
+          username = user.username || ''
+          pfpUrl = user.pfpUrl || ''
+        }
+      }
+    } catch {}
+  } catch {}
 
   return (
     <div className="min-h-screen">
@@ -93,12 +133,11 @@ export default async function SharePage({ params }: Props) {
             initialScore={initialData.score}
             initialMetrics={initialData.metrics}
             initialAllocation={initialData.allocation}
+            username={username}
+            pfpUrl={pfpUrl}
           />
         ) : (
-          <div
-            className="glass-card p-8 text-center"
-            role="alert"
-          >
+          <div className="glass-card p-8 text-center" role="alert">
             <p className="text-sm text-gray-400">
               Could not load results for this address.
             </p>

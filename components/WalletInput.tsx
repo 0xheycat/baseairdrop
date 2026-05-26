@@ -5,7 +5,7 @@ import { Search, Loader2, User, Wallet, CheckCircle2, Radio, AlertCircle } from 
 import { probeMiniappReady, getMiniappContext } from '@/lib/miniapp'
 
 interface WalletInputProps {
-  onCheck: (address: string) => void
+  onCheck: (address: string, username?: string) => void
   isLoading: boolean
 }
 
@@ -72,7 +72,7 @@ export default function WalletInput({ onCheck, isLoading }: WalletInputProps) {
       return
     }
     setInputError(null)
-    onCheck(trimmed)
+    onCheck(trimmed, username || undefined)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

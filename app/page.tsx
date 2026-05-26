@@ -58,8 +58,10 @@ export default function HomePage() {
   const [metrics, setMetrics] = useState<WalletMetrics | null>(null)
   const [allocation, setAllocation] = useState<AllocationResult | null>(null)
   const [params, setParams] = useState<ModelParams>(DEFAULT_PARAMS)
+  const [username, setUsername] = useState<string | undefined>(undefined)
 
-  const handleCheck = useCallback(async (addr: string) => {
+  const handleCheck = useCallback(async (addr: string, fcUsername?: string) => {
+    if (fcUsername) setUsername(fcUsername)
     setIsLoading(true)
     setError(null)
     setAddress(addr)
@@ -168,6 +170,7 @@ export default function HomePage() {
               address={address}
               score={score}
               allocation={allocation}
+              username={username}
             />
           </div>
         )}
