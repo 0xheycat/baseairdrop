@@ -66,6 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     value: ogValue,
     tokens: ogTokens,
     fdv: fdvLabel,
+    ts: Date.now().toString(), // Cache buster
   })
   if (username) ogParams.set('username', username)
   if (pfpUrl) ogParams.set('pfp', pfpUrl)

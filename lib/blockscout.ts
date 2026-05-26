@@ -13,7 +13,7 @@ export interface WalletMetrics {
 const cache = new Map<string, { data: WalletMetrics; timestamp: number }>()
 const CACHE_TTL = 10 * 1000
 
-async function blockscoutFetch(path: string, timeout = 15000): Promise<any> {
+async function blockscoutFetch(path: string, timeout = 25000): Promise<any> {
   const url = `${BASE_BLOCKSCOUT_API}${path}`
   try {
     const res = await fetch(url, {
@@ -67,7 +67,7 @@ async function getTransactions(
     if (nextPageParams) url += `?${nextPageParams}`
 
     try {
-      const data = await blockscoutFetch(url, 10000)
+      const data = await blockscoutFetch(url, 20000)
       const items = data.items || []
       if (items.length === 0) break
 
