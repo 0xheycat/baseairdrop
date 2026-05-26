@@ -1,12 +1,11 @@
 'use client'
 
-import { Share2, Loader2, ExternalLink, Check, Camera, Trophy, Swords, Zap } from 'lucide-react'
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { Share2, Loader2, ExternalLink, Check, Trophy, Swords, Zap, Radio } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
 import { safeComposeCast } from '@/lib/miniapp'
 import { formatNumber, formatUSD } from '@/lib/estimation'
 import type { AllocationResult } from '@/lib/estimation'
 import type { ActivityScore } from '@/lib/scoring'
-import SnapCard from './SnapCard'
 
 interface ShareButtonProps {
   address: string
@@ -67,8 +66,8 @@ export default function ShareButton({ address, score, allocation, username }: Sh
   const [sharing, setSharing] = useState(false)
   const [shared, setShared] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
-  const [showSnap, setShowSnap] = useState(false)
-  const snapRef = useRef<HTMLDivElement>(null)
+  const [snapcast, setSnapcast] = useState(false)
+  const [snapError, setSnapError] = useState<string | null>(null)
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
   const shareUrl = `${baseUrl}/share/${address}`
@@ -77,7 +76,6 @@ export default function ShareButton({ address, score, allocation, username }: Sh
   const tokens = formatNumber(allocation.userAllocation)
   const value = formatUSD(allocation.estimatedValue)
 
-  // Pick a random variant for variety
   const shareText = useMemo(() => {
     const idx = Math.floor(Math.random() * SHARE_VARIANTS.length)
     return SHARE_VARIANTS[idx](tier, tokens, value, score.overall)
@@ -85,6 +83,11 @@ export default function ShareButton({ address, score, allocation, username }: Sh
 
   const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(shareUrl)}`
 
+  /**
+   * Share as a cast — this publishes a message to Snapchain
+   * which creates a HUB_EVENT_TYPE_MERGE_MESSAGE event.
+   * The frame embed renders as a rich interactive card in the Farcaster feed.
+   */
   const handleShare = useCallback(async () => {
     setSharing(true)
     setShareError(null)
@@ -99,45 +102,31 @@ export default function ShareButton({ address, score, allocation, username }: Sh
     }
   }, [shareText, shareUrl])
 
-  const handleSnap = useCallback(async () => {
-    if (!snapRef.current) return
-    setSharing(true)
-    setShareError(null)
+  /**
+   * Snapcast — publish a cast that will be indexed on Snapchain
+   * with the miniapp frame embed. Users see the interactive
+   * score card directly in their feed.
+   */
+  const handleSnapcast = useCallback(async () => {
+    setSnapcast(false)
+    setSnapError(null)
 
     try {
-      const { toPng } = await import('html-to-image')
-      const dataUrl = await toPng(snapRef.current, {
-        width: 600,
-        height: 600,
-        pixelRatio: 2,
-        backgroundColor: '#0a0a0f',
-        style: { borderRadius: '0', border: 'none' },
+      const snapText = `${tier.emoji} ${tier.tier} — Score ${score.overall}/100\n\n` +
+        `🪙 ${tokens} tokens (~${value})\n` +
+        `${tier.flavor}\n\n` +
+        `@basechecker | Check yours 👇`
+
+      await safeComposeCast({
+        text: snapText,
+        embeds: [shareUrl],
       })
-
-      if (navigator.share && navigator.canShare) {
-        const blob = await fetch(dataUrl).then(r => r.blob())
-        const file = new File([blob], 'base-checker-snap.png', { type: 'image/png' })
-        const shareData = {
-          title: 'Base Checker Result',
-          text: shareText,
-          files: [file],
-        }
-        if (navigator.canShare(shareData)) {
-          await navigator.share(shareData)
-          setShared(true)
-          return
-        }
-      }
-
-      await safeComposeCast({ text: shareText, embeds: [shareUrl] })
-      setShared(true)
+      setSnapcast(true)
     } catch (err) {
-      console.error('[ShareButton] Snap failed:', err)
-      setShareError('Snap capture failed. Try sharing as a cast instead.')
-    } finally {
-      setSharing(false)
+      console.error('[ShareButton] Snapcast failed:', err)
+      setSnapError('Snapcast failed. Try again.')
     }
-  }, [shareText, shareUrl])
+  }, [tier, tokens, value, score.overall, shareUrl])
 
   const getShareIcon = () => {
     if (sharing) return <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -160,7 +149,7 @@ export default function ShareButton({ address, score, allocation, username }: Sh
         <span className="text-[11px] text-gray-500">— {tier.flavor}</span>
       </div>
 
-      {/* Challenge friends button */}
+      {/* Challenge friends — composeCast with frame embed */}
       <button
         onClick={handleShare}
         disabled={sharing}
@@ -175,49 +164,31 @@ export default function ShareButton({ address, score, allocation, username }: Sh
         {getShareLabel()}
       </button>
 
-      {/* Snap button */}
+      {/* Snapcast — publish to Snapchain with frame embed */}
       <button
-        onClick={() => setShowSnap(!showSnap)}
-        disabled={sharing}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-purple-500/20 bg-purple-500/[0.06] px-4 py-2.5 text-[12px] font-semibold text-purple-300 transition-all hover:border-purple-500/30 hover:bg-purple-500/10 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2"
-        aria-label="Create a snap image of your results"
+        onClick={handleSnapcast}
+        disabled={snapcast}
+        className={`flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-[12px] font-semibold transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2 ${
+          snapcast
+            ? 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300'
+            : 'border-purple-500/20 bg-purple-500/[0.06] text-purple-300 hover:border-purple-500/30 hover:bg-purple-500/10'
+        }`}
+        aria-label={snapcast ? 'Snapcast published!' : 'Publish as a Snapcast'}
       >
-        <Camera className="h-4 w-4" aria-hidden="true" />
-        Snap Result
+        {snapcast ? (
+          <Check className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <Radio className="h-4 w-4 animate-pulse" aria-hidden="true" />
+        )}
+        {snapcast ? 'Snapcasted!' : 'Snapcast'}
       </button>
 
-      {/* Snap preview */}
-      {showSnap && (
-        <div className="animate-fadeIn space-y-3">
-          <div className="overflow-hidden rounded-xl border border-white/[0.06]">
-            <SnapCard
-              ref={snapRef}
-              address={address}
-              score={score}
-              allocation={allocation}
-            />
-          </div>
-
-          <button
-            onClick={handleSnap}
-            disabled={sharing}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-2.5 text-[12px] font-semibold text-emerald-300 transition-all hover:border-emerald-500/30 hover:bg-emerald-500/10 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2"
-          >
-            <Camera className="h-4 w-4" aria-hidden="true" />
-            {sharing ? 'Capturing...' : 'Capture & Share Snap'}
-          </button>
-
-          <p className="text-center text-[10px] text-gray-600">
-            Creates a shareable image card of your results
-          </p>
-        </div>
-      )}
-
-      {/* Error state */}
+      {/* Error states */}
       {shareError && (
-        <p className="text-center text-[11px] text-red-400" role="alert">
-          {shareError}
-        </p>
+        <p className="text-center text-[11px] text-red-400" role="alert">{shareError}</p>
+      )}
+      {snapError && (
+        <p className="text-center text-[11px] text-red-400" role="alert">{snapError}</p>
       )}
 
       {/* Direct warpcast link fallback */}
