@@ -12,18 +12,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const address = params.address
   let title = 'Base Checker'
   let description = 'Check your estimated Base airdrop allocation'
+  let ogScore = '0'
+  let ogValue = '$0.00'
+  let ogTokens = '0'
 
   try {
     const metrics = await getWalletMetrics(address)
     const score = computeActivityScore(metrics)
     const alloc = computeAllocation(score.overall, DEFAULT_PARAMS)
-    title = `Base Checker: Score ${score.overall}/100 - ${formatNumber(alloc.userAllocation)} tokens`
-    description = `Estimated allocation: ${formatNumber(alloc.userAllocation)} tokens (~${formatUSD(alloc.estimatedValue)})`
+    ogScore = String(score.overall)
+    ogTokens = formatNumber(alloc.userAllocation)
+    ogValue = formatUSD(alloc.estimatedValue)
+    title = `Base Checker: Score ${score.overall}/100 - ${ogTokens} tokens`
+    description = `Estimated allocation: ${ogTokens} tokens (~${ogValue})`
   } catch {
     // Use defaults if fetch fails
   }
 
-  const ogUrl = `${baseUrl}/api/og?score=0&address=${address}&value=$0.00&tokens=0`
+  const ogUrl = `${baseUrl}/api/og?score=${ogScore}&address=${address}&value=${encodeURIComponent(ogValue)}&tokens=${encodeURIComponent(ogTokens)}`
   const miniappEmbed = {
     version: '1',
     imageUrl: ogUrl,
