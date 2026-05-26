@@ -1,14 +1,16 @@
 'use client'
 
-import { Share2, Loader2, ExternalLink, Check } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { Share2, Loader2, ExternalLink, Check, Camera } from 'lucide-react'
+import { useState, useCallback, useRef } from 'react'
 import { safeComposeCast } from '@/lib/miniapp'
 import { formatNumber, formatUSD } from '@/lib/estimation'
 import type { AllocationResult } from '@/lib/estimation'
+import type { ActivityScore } from '@/lib/scoring'
+import SnapCard from './SnapCard'
 
 interface ShareButtonProps {
   address: string
-  score: number
+  score: ActivityScore
   allocation: AllocationResult
 }
 
@@ -16,8 +18,10 @@ export default function ShareButton({ address, score, allocation }: ShareButtonP
   const [sharing, setSharing] = useState(false)
   const [shared, setShared] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
+  const [showSnap, setShowSnap] = useState(false)
+  const snapRef = useRef<HTMLDivElement>(null)
 
-  const shareText = `My Base airdrop estimate: ${formatNumber(allocation.userAllocation)} tokens (~${formatUSD(allocation.estimatedValue)}) | Score: ${score}/100\n\nCheck yours:`
+  const shareText = `My Base airdrop estimate: ${formatNumber(allocation.userAllocation)} tokens (~${formatUSD(allocation.estimatedValue)}) | Score: ${score.overall}/100\n\nCheck yours:`
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
   const shareUrl = `${baseUrl}/share/${address}`
   const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(shareUrl)}`
@@ -31,6 +35,52 @@ export default function ShareButton({ address, score, allocation }: ShareButtonP
     } catch (err) {
       console.error('[ShareButton] Share failed:', err)
       setShareError('Share failed. Try opening in Warpcast directly.')
+    } finally {
+      setSharing(false)
+    }
+  }, [shareText, shareUrl])
+
+  const handleSnap = useCallback(async () => {
+    if (!snapRef.current) return
+    setSharing(true)
+    setShareError(null)
+
+    try {
+      // Dynamic import html-to-image (must be installed)
+      const { toPng } = await import('html-to-image')
+      const dataUrl = await toPng(snapRef.current, {
+        width: 600,
+        height: 600,
+        pixelRatio: 2,
+        backgroundColor: '#0a0a0f',
+        style: {
+          borderRadius: '0',
+          border: 'none',
+        },
+      })
+
+      // Try native share API first (mobile)
+      if (navigator.share && navigator.canShare) {
+        const blob = await fetch(dataUrl).then(r => r.blob())
+        const file = new File([blob], 'base-checker-snap.png', { type: 'image/png' })
+        const shareData = {
+          title: 'Base Checker Result',
+          text: shareText,
+          files: [file],
+        }
+        if (navigator.canShare(shareData)) {
+          await navigator.share(shareData)
+          setShared(true)
+          return
+        }
+      }
+
+      // Fallback: compose cast with text only (image can't be embedded via SDK)
+      await safeComposeCast({ text: shareText, embeds: [shareUrl] })
+      setShared(true)
+    } catch (err) {
+      console.error('[ShareButton] Snap failed:', err)
+      setShareError('Snap capture failed. Try sharing as a cast instead.')
     } finally {
       setSharing(false)
     }
@@ -50,6 +100,7 @@ export default function ShareButton({ address, score, allocation }: ShareButtonP
 
   return (
     <div className="space-y-2.5 animate-fadeIn stagger-5" role="region" aria-label="Share results">
+      {/* Share as cast */}
       <button
         onClick={handleShare}
         disabled={sharing}
@@ -63,6 +114,44 @@ export default function ShareButton({ address, score, allocation }: ShareButtonP
         {getShareIcon()}
         {getShareLabel()}
       </button>
+
+      {/* Snap button */}
+      <button
+        onClick={() => setShowSnap(!showSnap)}
+        disabled={sharing}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-purple-500/20 bg-purple-500/[0.06] px-4 py-2.5 text-[12px] font-semibold text-purple-300 transition-all hover:border-purple-500/30 hover:bg-purple-500/10 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2"
+        aria-label="Create a snap image of your results"
+      >
+        <Camera className="h-4 w-4" aria-hidden="true" />
+        Snap Result
+      </button>
+
+      {/* Snap preview */}
+      {showSnap && (
+        <div className="animate-fadeIn space-y-3">
+          <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+            <SnapCard
+              ref={snapRef}
+              address={address}
+              score={score}
+              allocation={allocation}
+            />
+          </div>
+
+          <button
+            onClick={handleSnap}
+            disabled={sharing}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-2.5 text-[12px] font-semibold text-emerald-300 transition-all hover:border-emerald-500/30 hover:bg-emerald-500/10 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2"
+          >
+            <Camera className="h-4 w-4" aria-hidden="true" />
+            {sharing ? 'Capturing...' : 'Capture & Share Snap'}
+          </button>
+
+          <p className="text-center text-[10px] text-gray-600">
+            Creates a shareable image card of your results
+          </p>
+        </div>
+      )}
 
       {/* Error state */}
       {shareError && (

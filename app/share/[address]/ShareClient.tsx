@@ -59,7 +59,7 @@ export default function ShareClient({
 
       <ShareButton
         address={address}
-        score={initialScore.overall}
+        score={initialScore}
         allocation={allocation}
       />
 

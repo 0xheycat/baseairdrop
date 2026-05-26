@@ -166,7 +166,7 @@ export default function HomePage() {
             <ModelParameters params={params} onChange={handleParamsChange} />
             <ShareButton
               address={address}
-              score={score.overall}
+              score={score}
               allocation={allocation}
             />
           </div>
