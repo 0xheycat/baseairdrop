@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://base-checker.vercel.app'
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
 
 const miniappEmbed = {
   version: '1',

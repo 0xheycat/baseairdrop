@@ -4,7 +4,7 @@ import { computeActivityScore } from '@/lib/scoring'
 import { computeAllocation, DEFAULT_PARAMS, formatNumber, formatUSD } from '@/lib/estimation'
 import ShareClient from './ShareClient'
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://base-checker.vercel.app'
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
 
 type Props = { params: { address: string } }
 

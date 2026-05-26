@@ -18,7 +18,7 @@ export default function ShareButton({ address, score, allocation }: ShareButtonP
   const [shareError, setShareError] = useState<string | null>(null)
 
   const shareText = `My Base airdrop estimate: ${formatNumber(allocation.userAllocation)} tokens (~${formatUSD(allocation.estimatedValue)}) | Score: ${score}/100\n\nCheck yours:`
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://base-checker.vercel.app'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
   const shareUrl = `${baseUrl}/share/${address}`
   const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(shareUrl)}`
 
