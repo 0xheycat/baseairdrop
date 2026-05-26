@@ -40,12 +40,16 @@ async function getAddressCounters(address: string): Promise<{
   tokenTransfersCount: number
 } | null> {
   try {
-    const data = await blockscoutFetch(`/v2/addresses/${address}/counters`)
+    const path = `/v2/addresses/${address}/counters`
+    console.log(`[Blockscout] Fetching counters for ${address}`)
+    const data = await blockscoutFetch(path)
+    console.log(`[Blockscout] Counters data:`, data)
     return {
       transactionsCount: parseInt(data.transactions_count || '0') || 0,
       tokenTransfersCount: parseInt(data.token_transfers_count || '0') || 0,
     }
-  } catch {
+  } catch (err) {
+    console.error(`[Blockscout] getAddressCounters failed:`, err)
     return null
   }
 }
@@ -67,8 +71,10 @@ async function getTransactions(
     if (nextPageParams) url += `?${nextPageParams}`
 
     try {
+      console.log(`[Blockscout] Fetching transactions page ${page} for ${address}`)
       const data = await blockscoutFetch(url, 20000)
       const items = data.items || []
+      console.log(`[Blockscout] Got ${items.length} transactions on page ${page}`)
       if (items.length === 0) break
 
       for (const item of items) {
@@ -86,11 +92,13 @@ async function getTransactions(
         : null
       if (!nextPageParams) break
       page++
-    } catch {
+    } catch (err) {
+      console.error(`[Blockscout] getTransactions page ${page} failed:`, err)
       break
     }
   }
 
+  console.log(`[Blockscout] Total transactions fetched: ${allTxs.length}`)
   return allTxs
 }
 
@@ -99,10 +107,14 @@ async function getTransactions(
  */
 async function getBalance(address: string): Promise<number> {
   try {
-    const data = await blockscoutFetch(`/v2/addresses/${address}`)
+    const path = `/v2/addresses/${address}`
+    console.log(`[Blockscout] Fetching balance for ${address}`)
+    const data = await blockscoutFetch(path)
+    console.log(`[Blockscout] Balance data:`, data.coin_balance)
     const balanceWei = data.coin_balance || '0'
     return parseFloat(balanceWei) / 1e18
-  } catch {
+  } catch (err) {
+    console.error(`[Blockscout] getBalance failed:`, err)
     return 0
   }
 }
