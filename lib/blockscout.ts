@@ -15,12 +15,20 @@ const CACHE_TTL = 10 * 1000
 
 async function blockscoutFetch(path: string, timeout = 15000): Promise<any> {
   const url = `${BASE_BLOCKSCOUT_API}${path}`
-  const res = await fetch(url, {
-    headers: { 'Accept': 'application/json' },
-    signal: AbortSignal.timeout(timeout),
-  })
-  if (!res.ok) throw new Error(`Blockscout error: ${res.status}`)
-  return res.json()
+  try {
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(timeout),
+    })
+    if (!res.ok) {
+      console.error(`[Blockscout] API error for ${path}: ${res.status} ${res.statusText}`)
+      throw new Error(`Blockscout error: ${res.status}`)
+    }
+    return res.json()
+  } catch (err) {
+    console.error(`[Blockscout] Fetch failed for ${path}:`, err)
+    throw err
+  }
 }
 
 /**

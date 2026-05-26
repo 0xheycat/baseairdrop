@@ -21,9 +21,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     // Fetch on-chain data
+    console.log(`[OG] Fetching metrics for address: ${address}`)
     const metrics = await getWalletMetrics(address)
+    console.log(`[OG] Metrics received:`, metrics)
+    
     const score = computeActivityScore(metrics)
+    console.log(`[OG] Score computed:`, score)
+    
     const alloc = computeAllocation(score.overall, DEFAULT_PARAMS)
+    console.log(`[OG] Allocation computed:`, alloc)
+    
     ogScore = String(score.overall)
     ogTokens = formatNumber(alloc.userAllocation)
     ogValue = formatUSD(alloc.estimatedValue)
@@ -40,11 +47,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           pfpUrl = user.pfpUrl || ''
         }
       }
-    } catch {
+    } catch (err) {
       // Profile fetch is optional
+      console.log(`[OG] Profile fetch failed (optional):`, err)
     }
-  } catch {
+  } catch (err) {
     // Use defaults if fetch fails
+    console.error(`[OG] Error fetching metrics:`, err)
   }
 
   const fdvLabel = DEFAULT_PARAMS.fdv >= 1_000_000_000
