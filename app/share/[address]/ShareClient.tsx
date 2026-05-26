@@ -91,6 +91,7 @@ export default function ShareClient({
         address={address}
         score={initialScore}
         allocation={allocation}
+        params={params}
       />
 
       <Footer />

@@ -1,11 +1,30 @@
 'use client'
 
-import { Coins, DollarSign, BarChart3, Percent, Flame, Clock, Code, Wallet } from 'lucide-react'
+import { Coins, DollarSign, BarChart3, Percent, Flame, Clock, Code, Wallet, Trophy, Zap } from 'lucide-react'
 import ScoreRing from './ScoreRing'
 import type { ActivityScore } from '@/lib/scoring'
 import type { WalletMetrics } from '@/lib/blockscout'
 import type { AllocationResult, ModelParams } from '@/lib/estimation'
 import { formatNumber, formatUSD } from '@/lib/estimation'
+
+const TIER_MAP: Record<number, { tier: string; emoji: string; flavor: string; color: string }> = {
+  90: { tier: 'S-TIER LEGEND', emoji: '\u{1F3C6}', flavor: 'Wallet is absolutely cooked with on-chain activity', color: '#f59e0b' },
+  80: { tier: 'S-TIER', emoji: '\u{1F525}', flavor: 'Elite degen energy detected', color: '#10b981' },
+  70: { tier: 'A-TIER', emoji: '\u26A1', flavor: 'Strong on-chain presence', color: '#3b82f6' },
+  60: { tier: 'A-TIER', emoji: '\u{1F4AA}', flavor: 'Solid wallet activity', color: '#3b82f6' },
+  50: { tier: 'B-TIER', emoji: '\u{1F4CA}', flavor: 'Decent on-chain footprint', color: '#8b5cf6' },
+  40: { tier: 'B-TIER', emoji: '\u{1F440}', flavor: 'Room to level up', color: '#8b5cf6' },
+  30: { tier: 'C-TIER', emoji: '\u{1F331}', flavor: 'Getting started on Base', color: '#f59e0b' },
+  20: { tier: 'C-TIER', emoji: '\u{1F40C}', flavor: 'Low activity wallet', color: '#f59e0b' },
+  10: { tier: 'D-TIER', emoji: '\u{1F634}', flavor: 'Ghost wallet vibes', color: '#ef4444' },
+  0: { tier: 'D-TIER', emoji: '\u{1F47B}', flavor: 'Basically invisible on Base', color: '#ef4444' },
+}
+
+function getTier(score: number) {
+  const thresholds = [90, 80, 70, 60, 50, 40, 30, 20, 10, 0]
+  const threshold = thresholds.find(t => score >= t) ?? 0
+  return TIER_MAP[threshold]
+}
 
 interface ResultsDashboardProps {
   address: string
@@ -27,6 +46,11 @@ export default function ResultsDashboard({
     ? `${safeAddress.slice(0, 6)}\u00B7\u00B7\u00B7${safeAddress.slice(-4)}`
     : safeAddress
 
+  const tier = getTier(score.overall)
+  const fdv = params.fdv >= 1_000_000_000
+    ? `$${(params.fdv / 1_000_000_000).toFixed(0)}B`
+    : `$${(params.fdv / 1_000_000).toFixed(0)}M`
+
   return (
     <div
       className="space-y-3 animate-slideUp"
@@ -39,6 +63,15 @@ export default function ResultsDashboard({
           Activity Score
         </h2>
         <ScoreRing score={score.overall} />
+        {/* Tier badge */}
+        <div
+          className="mt-3 flex items-center gap-2 rounded-xl border px-4 py-2"
+          style={{ borderColor: `${tier.color}20`, background: `${tier.color}08` }}
+        >
+          <Trophy className="h-4 w-4" style={{ color: tier.color }} aria-hidden="true" />
+          <span className="text-[12px] font-bold" style={{ color: tier.color }}>{tier.emoji} {tier.tier}</span>
+        </div>
+        <p className="mt-1.5 text-[10px] text-gray-500">{tier.flavor}</p>
       </div>
 
       {/* Allocation Cards */}
@@ -66,11 +99,11 @@ export default function ResultsDashboard({
           delay={1}
         />
         <StatCard
-          icon={<BarChart3 className="h-3.5 w-3.5" />}
+          icon={<Zap className="h-3.5 w-3.5" />}
           iconColor="text-purple-400"
           iconBg="bg-purple-500/10"
-          label="Token Price"
-          value={formatUSD(allocation.tokenPrice)}
+          label="FDV"
+          value={fdv}
           valueColor="text-purple-300"
           delay={2}
         />

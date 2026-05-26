@@ -47,11 +47,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Use defaults if fetch fails
   }
 
+  const fdvLabel = DEFAULT_PARAMS.fdv >= 1_000_000_000
+    ? `$${(DEFAULT_PARAMS.fdv / 1_000_000_000).toFixed(0)}B`
+    : `$${(DEFAULT_PARAMS.fdv / 1_000_000).toFixed(0)}M`
+
   const ogParams = new URLSearchParams({
     score: ogScore,
     address,
     value: ogValue,
     tokens: ogTokens,
+    fdv: fdvLabel,
   })
   if (username) ogParams.set('username', username)
   if (pfpUrl) ogParams.set('pfp', pfpUrl)

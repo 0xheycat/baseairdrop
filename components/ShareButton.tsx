@@ -4,13 +4,14 @@ import { Share2, Loader2, ExternalLink, Check, Trophy, Swords, Zap, Radio } from
 import { useState, useCallback, useMemo } from 'react'
 import { safeComposeCast } from '@/lib/miniapp'
 import { formatNumber, formatUSD } from '@/lib/estimation'
-import type { AllocationResult } from '@/lib/estimation'
+import type { AllocationResult, ModelParams } from '@/lib/estimation'
 import type { ActivityScore } from '@/lib/scoring'
 
 interface ShareButtonProps {
   address: string
   score: ActivityScore
   allocation: AllocationResult
+  params: ModelParams
   username?: string
 }
 
@@ -34,35 +35,39 @@ function getTier(score: number) {
 }
 
 const SHARE_VARIANTS = [
-  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number) =>
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string) =>
     `${t.emoji} Just checked my Base allocation — ${t.tier}\n\n` +
     `🎯 Score: ${score}/100\n` +
     `🪙 Est. ${tokens} tokens (~${value})\n` +
+    `💎 FDV: ${fdv}\n` +
     `${t.flavor}\n\n` +
     `Think you can beat my score? 👇`,
 
-  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number) =>
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string) =>
     `${t.emoji} BASE AIRDROP SCORE: ${score}/100 — ${t.tier}\n\n` +
     `💰 Potential allocation: ${tokens} tokens (~${value})\n` +
+    `💎 FDV: ${fdv}\n` +
     `📈 ${t.flavor}\n\n` +
     `Drop your score below 👇🔥`,
 
-  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number) =>
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string) =>
     `${t.emoji} ${t.tier} on Base Checker!\n\n` +
     `Score: ${score}/100\n` +
     `Est. ${tokens} tokens (~${value})\n` +
+    `FDV: ${fdv}\n` +
     `${t.flavor}\n\n` +
     `Can you beat my score? 🏆`,
 
-  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number) =>
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string) =>
     `🔮 My Base airdrop prediction just dropped\n\n` +
     `${t.emoji} ${t.tier} — ${score}/100\n` +
-    `🪙 ${tokens} tokens (~${value})\n\n` +
+    `🪙 ${tokens} tokens (~${value})\n` +
+    `💎 FDV: ${fdv}\n\n` +
     `${t.flavor}\n\n` +
     `Check yours 👇`,
 ]
 
-export default function ShareButton({ address, score, allocation, username }: ShareButtonProps) {
+export default function ShareButton({ address, score, allocation, params, username }: ShareButtonProps) {
   const [sharing, setSharing] = useState(false)
   const [shared, setShared] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
@@ -75,11 +80,15 @@ export default function ShareButton({ address, score, allocation, username }: Sh
   const tier = useMemo(() => getTier(score.overall), [score.overall])
   const tokens = formatNumber(allocation.userAllocation)
   const value = formatUSD(allocation.estimatedValue)
+  const fdv = useMemo(() => {
+    if (params.fdv >= 1_000_000_000) return `$${(params.fdv / 1_000_000_000).toFixed(0)}B`
+    return `$${(params.fdv / 1_000_000).toFixed(0)}M`
+  }, [params.fdv])
 
   const shareText = useMemo(() => {
     const idx = Math.floor(Math.random() * SHARE_VARIANTS.length)
-    return SHARE_VARIANTS[idx](tier, tokens, value, score.overall)
-  }, [tier, tokens, value, score.overall])
+    return SHARE_VARIANTS[idx](tier, tokens, value, score.overall, fdv)
+  }, [tier, tokens, value, score.overall, fdv])
 
   const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(shareUrl)}`
 
@@ -114,6 +123,7 @@ export default function ShareButton({ address, score, allocation, username }: Sh
     try {
       const snapText = `${tier.emoji} ${tier.tier} — Score ${score.overall}/100\n\n` +
         `🪙 ${tokens} tokens (~${value})\n` +
+        `💎 FDV: ${fdv}\n` +
         `${tier.flavor}\n\n` +
         `@basechecker | Check yours 👇`
 
@@ -126,7 +136,7 @@ export default function ShareButton({ address, score, allocation, username }: Sh
       console.error('[ShareButton] Snapcast failed:', err)
       setSnapError('Snapcast failed. Try again.')
     }
-  }, [tier, tokens, value, score.overall, shareUrl])
+  }, [tier, tokens, value, score.overall, fdv, shareUrl])
 
   const getShareIcon = () => {
     if (sharing) return <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

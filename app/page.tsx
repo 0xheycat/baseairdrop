@@ -170,6 +170,7 @@ export default function HomePage() {
               address={address}
               score={score}
               allocation={allocation}
+              params={params}
               username={username}
             />
           </div>
