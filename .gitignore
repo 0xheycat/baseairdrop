@@ -1,0 +1,8 @@
+node_modules/
+.next/
+docs/
+.opencloud/
+.openclaude/
+.env
+.env.local
+out/
