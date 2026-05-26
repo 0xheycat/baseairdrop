@@ -7,6 +7,10 @@ import ShareClient from './ShareClient'
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
 
+// Disable caching for this dynamic route
+export const revalidate = 0
+export const dynamic = 'force-dynamic'
+
 type Props = { params: { address: string } }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
