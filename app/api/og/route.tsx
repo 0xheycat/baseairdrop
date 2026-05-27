@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
           width: '100%',
           height: '100%',
           display: 'flex',
+          flexDirection: 'column',
           fontFamily: 'Inter, system-ui, sans-serif',
           color: '#f1f5f9',
           position: 'relative',
@@ -100,10 +101,10 @@ export async function GET(req: NextRequest) {
         <div
           style={{
             position: 'absolute',
-            top: '-160px',
-            left: '-120px',
-            width: '600px',
-            height: '600px',
+            top: '-100px',
+            left: '-80px',
+            width: '400px',
+            height: '400px',
             borderRadius: '50%',
             background: `radial-gradient(circle, ${scoreColor}20 0%, transparent 70%)`,
           }}
@@ -111,10 +112,10 @@ export async function GET(req: NextRequest) {
         <div
           style={{
             position: 'absolute',
-            bottom: '-120px',
-            right: '-80px',
-            width: '500px',
-            height: '500px',
+            bottom: '-80px',
+            right: '-60px',
+            width: '300px',
+            height: '300px',
             borderRadius: '50%',
             background: 'radial-gradient(circle, #8b5cf620 0%, transparent 70%)',
           }}
@@ -127,35 +128,53 @@ export async function GET(req: NextRequest) {
             top: 0,
             left: 0,
             right: 0,
-            height: '6px',
+            height: '4px',
             background: `linear-gradient(90deg, transparent, ${scoreColor}, transparent)`,
           }}
         />
 
-        {/* Left column - Score & PFP */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '400px',
-            padding: '32px',
-            gap: '20px',
-          }}
-        >
-          {/* PFP or Score ring */}
-          {pfp ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px 8px', gap: '12px', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: '#0052FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'white' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '14px', fontWeight: '700', lineHeight: 1 }}>Base Checker</span>
+              <span style={{ fontSize: '8px', fontWeight: '600', color: '#f59e0b' }}>ESTIMATE</span>
+            </div>
+          </div>
+          {pfp && (
+            <span style={{ fontSize: '16px', fontWeight: '800', color: scoreColor }}>
+              {score}/100
+            </span>
+          )}
+        </div>
+
+        {/* Main content */}
+        <div style={{ display: 'flex', flex: 1, padding: '8px 16px 12px', gap: '12px', alignItems: 'flex-start' }}>
+          {/* Left - Avatar & Tier */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', minWidth: 'fit-content' }}>
+            {pfp ? (
               <div
                 style={{
-                  width: '144px',
-                  height: '144px',
+                  width: '100px',
+                  height: '100px',
                   borderRadius: '50%',
-                  border: `6px solid ${scoreColor}`,
+                  border: `4px solid ${scoreColor}`,
                   overflow: 'hidden',
                   display: 'flex',
-                  boxShadow: `0 0 40px ${scoreColor}40`,
+                  boxShadow: `0 0 20px ${scoreColor}40`,
                 }}
               >
                 <img
@@ -164,218 +183,132 @@ export async function GET(req: NextRequest) {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </div>
-              {username && (
-                <span style={{ fontSize: '20px', fontWeight: '700', color: '#94a3b8' }}>
-                  @{username}
-                </span>
-              )}
-            </div>
-          ) : (
-            <div
-              style={{
-                width: '180px',
-                height: '180px',
-                borderRadius: '50%',
-                border: `8px solid ${scoreColor}`,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: `0 0 60px ${scoreColor}30, inset 0 0 30px ${scoreColor}10`,
-              }}
-            >
-              <span style={{ fontSize: '64px', fontWeight: '900', color: scoreColor, lineHeight: 1 }}>
-                {score}
-              </span>
-              <span style={{ fontSize: '16px', color: '#475569', fontWeight: '500', marginTop: '2px' }}>
-                / 100
-              </span>
-            </div>
-          )}
-
-          {/* Tier badge */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: `${scoreColor}15`,
-              border: `1px solid ${scoreColor}30`,
-              borderRadius: '999px',
-              padding: '6px 20px',
-            }}
-          >
-            <span style={{ fontSize: '20px' }}>{tier.emoji}</span>
-            <span style={{ fontSize: '16px', fontWeight: '800', color: scoreColor, letterSpacing: '0.5px' }}>
-              {tier.label}
-            </span>
-          </div>
-
-          {/* Score bar */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', gap: '6px' }}>
-            <div
-              style={{
-                width: '100%',
-                height: '12px',
-                borderRadius: '6px',
-                background: '#ffffff0f',
-                overflow: 'hidden',
-                display: 'flex',
-              }}
-            >
+            ) : (
               <div
                 style={{
-                  width: `${score}%`,
-                  height: '100%',
-                  borderRadius: '6px',
-                  background: `linear-gradient(90deg, ${scoreColor}, ${scoreColor}aa)`,
-                }}
-              />
-            </div>
-            <span style={{ fontSize: '14px', color: '#475569', fontWeight: '600' }}>
-              Activity Score
-            </span>
-          </div>
-        </div>
-
-        {/* Right side - Stats */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            flex: 1,
-            padding: '32px 40px 32px 16px',
-            gap: '20px',
-          }}
-        >
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '4px' }}>
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '50%',
-                background: '#0052FF',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 24px #0052FF80',
-              }}
-            >
-              <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: 'white' }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.3px' }}>
-                Base Checker
-              </span>
-              <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '2px', color: '#f59e0b' }}>
-                Unofficial Estimate
-              </span>
-            </div>
-            {pfp && (
-              <div
-                style={{
-                  marginLeft: 'auto',
+                  width: '100px',
+                  height: '100px',
+                  borderRadius: '50%',
+                  border: `4px solid ${scoreColor}`,
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#ffffff08',
-                  borderRadius: '999px',
-                  padding: '6px 16px',
-                }}
-              >
-                <span style={{ fontSize: '32px', fontWeight: '900', color: scoreColor }}>
-                  {score}
-                </span>
-                <span style={{ fontSize: '14px', color: '#475569', fontWeight: '500' }}>/100</span>
-              </div>
-            )}
-          </div>
-
-          {/* Main stats grid */}
-          <div style={{ display: 'flex', gap: '12px' }}>
-            {/* Tokens card */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                background: '#10b98110',
-                border: '1px solid #10b98126',
-                borderRadius: '16px',
-                padding: '16px 20px',
-                flex: 1,
-              }}
-            >
-              <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '2px', color: '#10b981', marginBottom: '4px' }}>
-                Est. Tokens
-              </span>
-              <span style={{ fontSize: '30px', fontWeight: '900', color: '#10b981' }}>
-                {tokens}
-              </span>
-            </div>
-            {/* Value card */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                background: '#0052FF10',
-                border: '1px solid #0052FF26',
-                borderRadius: '16px',
-                padding: '16px 20px',
-                flex: 1,
-              }}
-            >
-              <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '2px', color: '#0052FF', marginBottom: '4px' }}>
-                Est. Value
-              </span>
-              <span style={{ fontSize: '30px', fontWeight: '900', color: '#0052FF' }}>
-                {value}
-              </span>
-            </div>
-          </div>
-
-          {/* FDV & Address row */}
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {/* FDV badge */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: '#8b5cf614',
-                border: '1px solid #8b5cf626',
-                borderRadius: '12px',
-                padding: '10px 20px',
-              }}
-            >
-              <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '2px', color: '#a78bfa' }}>
-                FDV
-              </span>
-              <span style={{ fontSize: '22px', fontWeight: '800', color: '#a78bfa' }}>
-                {fdv}
-              </span>
-            </div>
-            {/* Address */}
-            {truncAddr && (
-              <div
-                style={{
-                  display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: '#ffffff08',
-                  border: '1px solid #ffffff10',
-                  borderRadius: '999px',
-                  padding: '8px 20px',
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  color: '#334155',
-                  flex: 1,
+                  background: `${scoreColor}08`,
+                  boxShadow: `0 0 20px ${scoreColor}20`,
                 }}
               >
-                {truncAddr}
+                <span style={{ fontSize: '36px', fontWeight: '900', color: scoreColor, lineHeight: 1 }}>
+                  {score}
+                </span>
               </div>
             )}
+            
+            {/* Tier badge */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                background: `${scoreColor}15`,
+                border: `1px solid ${scoreColor}30`,
+                borderRadius: '999px',
+                padding: '3px 10px',
+                minWidth: '100%',
+                justifyContent: 'center',
+              }}
+            >
+              <span style={{ fontSize: '12px' }}>{tier.emoji}</span>
+              <span style={{ fontSize: '9px', fontWeight: '700', color: scoreColor }}>{tier.label}</span>
+            </div>
+
+            {username && (
+              <span style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', textAlign: 'center', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                @{username}
+              </span>
+            )}
+          </div>
+
+          {/* Right - Stats */}
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: '6px', justifyContent: 'flex-start' }}>
+            {/* Tokens & Value Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: '#10b98110',
+                  border: '1px solid #10b98120',
+                  borderRadius: '8px',
+                  padding: '8px 10px',
+                }}
+              >
+                <span style={{ fontSize: '8px', fontWeight: '600', textTransform: 'uppercase', color: '#10b981', letterSpacing: '0.5px' }}>
+                  Tokens
+                </span>
+                <span style={{ fontSize: '16px', fontWeight: '800', color: '#10b981' }}>
+                  {tokens}
+                </span>
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: '#0052FF10',
+                  border: '1px solid #0052FF20',
+                  borderRadius: '8px',
+                  padding: '8px 10px',
+                }}
+              >
+                <span style={{ fontSize: '8px', fontWeight: '600', textTransform: 'uppercase', color: '#0052FF', letterSpacing: '0.5px' }}>
+                  Value
+                </span>
+                <span style={{ fontSize: '16px', fontWeight: '800', color: '#0052FF' }}>
+                  {value}
+                </span>
+              </div>
+            </div>
+
+            {/* FDV & Address Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  background: '#8b5cf610',
+                  border: '1px solid #8b5cf620',
+                  borderRadius: '8px',
+                  padding: '8px 10px',
+                }}
+              >
+                <span style={{ fontSize: '8px', fontWeight: '600', textTransform: 'uppercase', color: '#a78bfa', letterSpacing: '0.5px' }}>
+                  FDV
+                </span>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: '#a78bfa' }}>
+                  {fdv}
+                </span>
+              </div>
+              {truncAddr && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: '#ffffff08',
+                    border: '1px solid #ffffff10',
+                    borderRadius: '8px',
+                    padding: '8px 10px',
+                    fontFamily: 'monospace',
+                    fontSize: '9px',
+                    color: '#475569',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {truncAddr}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
