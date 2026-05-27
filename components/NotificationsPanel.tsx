@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Bell, X, Award, Image, Sparkles, Zap, Share2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bell, Award, Image, Sparkles, Zap, Share2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface Notification {
   id: string
