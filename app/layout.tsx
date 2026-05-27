@@ -21,11 +21,11 @@ const miniappEmbed = {
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'Base Checker - Base Allocation Estimator',
+    default: 'Base Checker - $BASE Allocation Estimator',
     template: '%s | Base Checker',
   },
   description:
-    'Check your estimated Base airdrop allocation. Analyze on-chain activity and get hypothetical token estimates.',
+    'Check your estimated Base airdrop allocation. Analyze on-chain activity and get $BASE token estimates.',
   openGraph: {
     title: 'Base Checker',
     description: 'Check your estimated Base airdrop allocation',
@@ -46,9 +46,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta name="fc:frame" content={JSON.stringify(miniappEmbed)} />
-      </head>
+      <head />
       <body className="min-h-screen">
         <a href="#main-content" className="skip-nav">
           Skip to main content
