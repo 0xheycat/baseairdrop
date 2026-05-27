@@ -7,13 +7,16 @@ import { computeAllocation, DEFAULT_PARAMS, formatNumber, formatUSD } from '@/li
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
+// Disable caching for dynamic OG images
+export const revalidate = 0
+
 export async function GET(req: NextRequest) {
   const scoreParam = req.nextUrl.searchParams.get('score') || '0'
   const address = req.nextUrl.searchParams.get('address') || ''
   let value = req.nextUrl.searchParams.get('value') || '$0.00'
   let tokens = req.nextUrl.searchParams.get('tokens') || '0'
-  const username = req.nextUrl.searchParams.get('username') || ''
-  const pfp = req.nextUrl.searchParams.get('pfp') || ''
+  let username = decodeURIComponent(req.nextUrl.searchParams.get('username') || '')
+  let pfp = decodeURIComponent(req.nextUrl.searchParams.get('pfp') || '')
   const fdv = req.nextUrl.searchParams.get('fdv') || '$4B'
 
   // If score is 0 and we have an address, fetch data ourselves
@@ -64,7 +67,7 @@ export async function GET(req: NextRequest) {
     ? `${address.slice(0, 6)}\u00B7\u00B7\u00B7${address.slice(-4)}`
     : ''
 
-  return new ImageResponse(
+  const imageResponse = new ImageResponse(
     (
       <div
         style={{
@@ -382,4 +385,11 @@ export async function GET(req: NextRequest) {
       height: 630,
     }
   )
+
+  // Add cache control headers to prevent caching of dynamic OG images
+  imageResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0, public')
+  imageResponse.headers.set('Pragma', 'no-cache')
+  imageResponse.headers.set('Expires', '0')
+  
+  return imageResponse
 }
