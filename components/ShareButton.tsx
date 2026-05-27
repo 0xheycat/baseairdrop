@@ -1,11 +1,12 @@
 'use client'
 
-import { Share2, Loader2, ExternalLink, Check, Trophy, Swords, Zap, Radio } from 'lucide-react'
+import { Loader2, ExternalLink, Check, Trophy, Swords } from 'lucide-react'
 import { useState, useCallback, useMemo } from 'react'
 import { safeComposeCast } from '@/lib/miniapp'
 import { formatNumber, formatUSD } from '@/lib/estimation'
 import type { AllocationResult, ModelParams } from '@/lib/estimation'
 import type { ActivityScore } from '@/lib/scoring'
+import type { NftHolder } from '@/lib/blockscout'
 
 interface ShareButtonProps {
   address: string
@@ -13,6 +14,7 @@ interface ShareButtonProps {
   allocation: AllocationResult
   params: ModelParams
   username?: string
+  nfts?: NftHolder[]
 }
 
 const TIER_MAP: Record<number, { tier: string; emoji: string; flavor: string }> = {
@@ -34,48 +36,67 @@ function getTier(score: number) {
   return TIER_MAP[threshold]
 }
 
+function formatNftLine(nfts: NftHolder[]): string {
+  const owned = nfts.filter(n => n.balance > 0)
+  if (owned.length === 0) return ''
+  const parts = owned.map(n => `${n.name} x${n.balance}`)
+  return `\n🏅 ${parts.join(' | ')}`
+}
+
+function formatNftStats(nfts: NftHolder[]): string {
+  const lines = nfts.map(n => {
+    const status = n.balance > 0 ? `✅ x${n.balance}` : '❌'
+    return `${n.name}: ${status} (${n.holders > 0 ? n.holders.toLocaleString() : '?'} holders)`
+  })
+  return `\n\n📦 Official Base NFTs:\n${lines.join('\n')}`
+}
+
 const SHARE_VARIANTS = [
-  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string) =>
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string, nftLine: string, nftStats: string) =>
     `${t.emoji} Just checked my Base allocation — ${t.tier}\n\n` +
     `🎯 Score: ${score}/100\n` +
     `🪙 Est. ${tokens} tokens (~${value})\n` +
-    `💎 FDV: ${fdv}\n` +
-    `${t.flavor}\n\n` +
+    `💎 FDV: ${fdv}${nftLine}\n` +
+    `${t.flavor}${nftStats}\n\n` +
     `Think you can beat my score? 👇`,
 
-  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string) =>
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string, nftLine: string, nftStats: string) =>
     `${t.emoji} BASE AIRDROP SCORE: ${score}/100 — ${t.tier}\n\n` +
     `💰 Potential allocation: ${tokens} tokens (~${value})\n` +
-    `💎 FDV: ${fdv}\n` +
-    `📈 ${t.flavor}\n\n` +
+    `💎 FDV: ${fdv}${nftLine}\n` +
+    `📈 ${t.flavor}${nftStats}\n\n` +
     `Drop your score below 👇🔥`,
 
-  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string) =>
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string, nftLine: string, nftStats: string) =>
     `${t.emoji} ${t.tier} on Base Checker!\n\n` +
     `Score: ${score}/100\n` +
     `Est. ${tokens} tokens (~${value})\n` +
-    `FDV: ${fdv}\n` +
-    `${t.flavor}\n\n` +
+    `FDV: ${fdv}${nftLine}\n` +
+    `${t.flavor}${nftStats}\n\n` +
     `Can you beat my score? 🏆`,
 
-  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string) =>
+  (t: ReturnType<typeof getTier>, tokens: string, value: string, score: number, fdv: string, nftLine: string, nftStats: string) =>
     `🔮 My Base airdrop prediction just dropped\n\n` +
     `${t.emoji} ${t.tier} — ${score}/100\n` +
     `🪙 ${tokens} tokens (~${value})\n` +
-    `💎 FDV: ${fdv}\n\n` +
-    `${t.flavor}\n\n` +
+    `💎 FDV: ${fdv}${nftLine}\n\n` +
+    `${t.flavor}${nftStats}\n\n` +
     `Check yours 👇`,
 ]
 
-export default function ShareButton({ address, score, allocation, params, username }: ShareButtonProps) {
+export default function ShareButton({ address, score, allocation, params, username, nfts = [] }: ShareButtonProps) {
   const [sharing, setSharing] = useState(false)
   const [shared, setShared] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
-  const [snapcast, setSnapcast] = useState(false)
-  const [snapError, setSnapError] = useState<string | null>(null)
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.vercel.app'
-  const shareUrl = `${baseUrl}/share/${address}`
+  const shareParams = new URLSearchParams({
+    fdv: String(params.fdv),
+    supply: String(params.supply),
+    pool: String(params.poolPercent),
+    rec: String(params.recipients),
+  })
+  const shareUrl = `${baseUrl}/share/${address}?${shareParams.toString()}`
 
   const tier = useMemo(() => getTier(score.overall), [score.overall])
   const tokens = formatNumber(allocation.userAllocation)
@@ -85,18 +106,16 @@ export default function ShareButton({ address, score, allocation, params, userna
     return `$${(params.fdv / 1_000_000).toFixed(0)}M`
   }, [params.fdv])
 
+  const nftLine = useMemo(() => formatNftLine(nfts), [nfts])
+  const nftStats = useMemo(() => formatNftStats(nfts), [nfts])
+
   const shareText = useMemo(() => {
     const idx = Math.floor(Math.random() * SHARE_VARIANTS.length)
-    return SHARE_VARIANTS[idx](tier, tokens, value, score.overall, fdv)
-  }, [tier, tokens, value, score.overall, fdv])
+    return SHARE_VARIANTS[idx](tier, tokens, value, score.overall, fdv, nftLine, nftStats)
+  }, [tier, tokens, value, score.overall, fdv, nftLine, nftStats])
 
   const warpcastUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}&embeds[]=${encodeURIComponent(shareUrl)}`
 
-  /**
-   * Share as a cast — this publishes a message to Snapchain
-   * which creates a HUB_EVENT_TYPE_MERGE_MESSAGE event.
-   * The frame embed renders as a rich interactive card in the Farcaster feed.
-   */
   const handleShare = useCallback(async () => {
     setSharing(true)
     setShareError(null)
@@ -110,33 +129,6 @@ export default function ShareButton({ address, score, allocation, params, userna
       setSharing(false)
     }
   }, [shareText, shareUrl])
-
-  /**
-   * Snapcast — publish a cast that will be indexed on Snapchain
-   * with the miniapp frame embed. Users see the interactive
-   * score card directly in their feed.
-   */
-  const handleSnapcast = useCallback(async () => {
-    setSnapcast(false)
-    setSnapError(null)
-
-    try {
-      const snapText = `${tier.emoji} ${tier.tier} — Score ${score.overall}/100\n\n` +
-        `🪙 ${tokens} tokens (~${value})\n` +
-        `💎 FDV: ${fdv}\n` +
-        `${tier.flavor}\n\n` +
-        `@basechecker | Check yours 👇`
-
-      await safeComposeCast({
-        text: snapText,
-        embeds: [shareUrl],
-      })
-      setSnapcast(true)
-    } catch (err) {
-      console.error('[ShareButton] Snapcast failed:', err)
-      setSnapError('Snapcast failed. Try again.')
-    }
-  }, [tier, tokens, value, score.overall, fdv, shareUrl])
 
   const getShareIcon = () => {
     if (sharing) return <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -174,31 +166,9 @@ export default function ShareButton({ address, score, allocation, params, userna
         {getShareLabel()}
       </button>
 
-      {/* Snapcast — publish to Snapchain with frame embed */}
-      <button
-        onClick={handleSnapcast}
-        disabled={snapcast}
-        className={`flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-[12px] font-semibold transition-all active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-[#0052FF] focus-visible:outline-offset-2 ${
-          snapcast
-            ? 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-300'
-            : 'border-purple-500/20 bg-purple-500/[0.06] text-purple-300 hover:border-purple-500/30 hover:bg-purple-500/10'
-        }`}
-        aria-label={snapcast ? 'Snapcast published!' : 'Publish as a Snapcast'}
-      >
-        {snapcast ? (
-          <Check className="h-4 w-4" aria-hidden="true" />
-        ) : (
-          <Radio className="h-4 w-4 animate-pulse" aria-hidden="true" />
-        )}
-        {snapcast ? 'Snapcasted!' : 'Snapcast'}
-      </button>
-
-      {/* Error states */}
+      {/* Error state */}
       {shareError && (
         <p className="text-center text-[11px] text-red-400" role="alert">{shareError}</p>
-      )}
-      {snapError && (
-        <p className="text-center text-[11px] text-red-400" role="alert">{snapError}</p>
       )}
 
       {/* Direct warpcast link fallback */}

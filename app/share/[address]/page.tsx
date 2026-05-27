@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getWalletMetrics } from '@/lib/blockscout'
 import { computeActivityScore } from '@/lib/scoring'
 import { computeAllocation, DEFAULT_PARAMS, formatNumber, formatUSD } from '@/lib/estimation'
+import type { ModelParams } from '@/lib/estimation'
 import { fetchFidByAddress, fetchUserByFid } from '@/lib/neynar'
 import ShareClient from './ShareClient'
 
@@ -11,10 +12,24 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://baseairdrop-mu.verce
 export const revalidate = 0
 export const dynamic = 'force-dynamic'
 
-type Props = { params: { address: string } }
+type Props = { params: { address: string }, searchParams: { [key: string]: string | string[] | undefined } }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+function parseModelParams(sp: Props['searchParams']): ModelParams {
+  const fdv = typeof sp.fdv === 'string' ? Number(sp.fdv) : NaN
+  const supply = typeof sp.supply === 'string' ? Number(sp.supply) : NaN
+  const pool = typeof sp.pool === 'string' ? Number(sp.pool) : NaN
+  const rec = typeof sp.rec === 'string' ? Number(sp.rec) : NaN
+  return {
+    fdv: Number.isFinite(fdv) && fdv > 0 ? fdv : DEFAULT_PARAMS.fdv,
+    supply: Number.isFinite(supply) && supply > 0 ? supply : DEFAULT_PARAMS.supply,
+    poolPercent: Number.isFinite(pool) && pool > 0 ? pool : DEFAULT_PARAMS.poolPercent,
+    recipients: Number.isFinite(rec) && rec > 0 ? rec : DEFAULT_PARAMS.recipients,
+  }
+}
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const address = params.address
+  const modelParams = parseModelParams(searchParams)
   let title = 'Base Checker'
   let description = 'Check your estimated Base airdrop allocation'
   let ogScore = '0'
@@ -32,13 +47,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     )
     const metrics = await Promise.race([metricsPromise, timeoutPromise]) as any
     console.log(`[OG] Metrics received:`, metrics)
-    
+
     const score = computeActivityScore(metrics)
     console.log(`[OG] Score computed:`, score)
-    
-    const alloc = computeAllocation(score.overall, DEFAULT_PARAMS)
+
+    const alloc = computeAllocation(score.overall, modelParams)
     console.log(`[OG] Allocation computed:`, alloc)
-    
+
     ogScore = String(score.overall)
     ogTokens = formatNumber(alloc.userAllocation)
     ogValue = formatUSD(alloc.estimatedValue)
@@ -72,9 +87,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     console.error(`[OG] Error fetching metrics:`, err)
   }
 
-  const fdvLabel = DEFAULT_PARAMS.fdv >= 1_000_000_000
-    ? `$${(DEFAULT_PARAMS.fdv / 1_000_000_000).toFixed(0)}B`
-    : `$${(DEFAULT_PARAMS.fdv / 1_000_000).toFixed(0)}M`
+  const fdvLabel = modelParams.fdv >= 1_000_000_000
+    ? `$${(modelParams.fdv / 1_000_000_000).toFixed(0)}B`
+    : `$${(modelParams.fdv / 1_000_000).toFixed(0)}M`
 
   const ogParams = new URLSearchParams({
     score: ogScore,
@@ -116,8 +131,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function SharePage({ params }: Props) {
+export default async function SharePage({ params, searchParams }: Props) {
   const address = params.address
+  const modelParams = parseModelParams(searchParams)
   let initialData = null
   let username = ''
   let pfpUrl = ''
@@ -125,7 +141,7 @@ export default async function SharePage({ params }: Props) {
   try {
     const metrics = await getWalletMetrics(address)
     const score = computeActivityScore(metrics)
-    const allocation = computeAllocation(score.overall, DEFAULT_PARAMS)
+    const allocation = computeAllocation(score.overall, modelParams)
     initialData = { metrics, score, allocation }
 
     // Fetch Farcaster profile
@@ -164,6 +180,7 @@ export default async function SharePage({ params }: Props) {
             initialScore={initialData.score}
             initialMetrics={initialData.metrics}
             initialAllocation={initialData.allocation}
+            initialParams={modelParams}
             username={username}
             pfpUrl={pfpUrl}
           />

@@ -2,11 +2,21 @@ import 'server-only'
 
 const BASE_BLOCKSCOUT_API = 'https://base.blockscout.com/api'
 
+export interface NftHolder {
+  name: string
+  contract: string
+  symbol: string
+  balance: number
+  holders: number
+  totalSupply: number
+}
+
 export interface WalletMetrics {
   txCount: number
   activeDays: number
   contractCount: number
   ethBalance: number
+  nfts: NftHolder[]
 }
 
 // In-memory cache (10s TTL for stats)
@@ -119,6 +129,65 @@ async function getBalance(address: string): Promise<number> {
   }
 }
 
+// Official Base NFT contracts
+const BASE_NFT_CONTRACTS = [
+  { name: 'Beta Access NFT', contract: '0xe3EB165C9ED6D6D87A59C410C8F30bABac44FeFD' },
+  { name: 'Base Builder NFT', contract: '0x8DC80A209A3362f0586e6C116973Bb6908170c84' },
+]
+
+/**
+ * Fetch collection stats (holders, supply) for an NFT contract
+ */
+async function getNftCollectionStats(contract: string): Promise<{ holders: number; totalSupply: number; symbol: string }> {
+  try {
+    const data = await blockscoutFetch(`/v2/tokens/${contract}`)
+    return {
+      holders: parseInt(data.holders_count || '0') || 0,
+      totalSupply: parseInt(data.total_supply || '0') || 0,
+      symbol: data.symbol || '',
+    }
+  } catch {
+    return { holders: 0, totalSupply: 0, symbol: '' }
+  }
+}
+
+/**
+ * Get Base official NFT holdings for an address with live collection stats
+ */
+async function getNftHoldings(address: string): Promise<NftHolder[]> {
+  try {
+    // Fetch user's ERC-721 tokens + collection stats in parallel
+    const [tokenData, ...statsResults] = await Promise.all([
+      blockscoutFetch(`/v2/addresses/${address}/tokens?type=ERC-721`),
+      ...BASE_NFT_CONTRACTS.map(nft => getNftCollectionStats(nft.contract)),
+    ])
+
+    const items = tokenData.items || []
+
+    return BASE_NFT_CONTRACTS.map((nft, i) => {
+      const token = items.find((t: any) => t.token?.address?.toLowerCase() === nft.contract.toLowerCase())
+      const stats = statsResults[i]
+      return {
+        name: nft.name,
+        contract: nft.contract,
+        symbol: stats.symbol,
+        balance: token ? parseInt(token.value || '0') : 0,
+        holders: stats.holders,
+        totalSupply: stats.totalSupply,
+      }
+    })
+  } catch (err) {
+    console.error('[Blockscout] getNftHoldings failed:', err)
+    return BASE_NFT_CONTRACTS.map(nft => ({
+      ...nft,
+      symbol: '',
+      balance: 0,
+      holders: 0,
+      totalSupply: 0,
+    }))
+  }
+}
+
 /**
  * Get wallet metrics using Blockscout (FREE, no API key)
  */
@@ -132,16 +201,18 @@ export async function getWalletMetrics(address: string): Promise<WalletMetrics> 
     return cached.data
   }
 
-  // Parallel fetch: counters + recent transactions + balance (use allSettled to handle partial failures)
+  // Parallel fetch: counters + recent transactions + balance + NFTs
   const results = await Promise.allSettled([
     getAddressCounters(normalized),
     getTransactions(normalized, 3),
     getBalance(normalized),
+    getNftHoldings(normalized),
   ])
 
   const counters = results[0].status === 'fulfilled' ? results[0].value : null
   const txs = results[1].status === 'fulfilled' ? results[1].value : []
   const ethBalance = results[2].status === 'fulfilled' ? results[2].value : 0
+  const nfts = results[3].status === 'fulfilled' ? results[3].value : []
 
   // Count unique active days from recent transactions
   const uniqueDays = new Set<string>()
@@ -164,6 +235,7 @@ export async function getWalletMetrics(address: string): Promise<WalletMetrics> 
     activeDays: uniqueDays.size,
     contractCount: contracts.size,
     ethBalance,
+    nfts,
   }
 
   console.log(`[Blockscout] Metrics for ${normalized}:`, data)

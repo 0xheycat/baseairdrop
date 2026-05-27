@@ -7,6 +7,7 @@ import Hero from '@/components/Hero'
 import WalletInput from '@/components/WalletInput'
 import ResultsDashboard from '@/components/ResultsDashboard'
 import ModelParameters from '@/components/ModelParameters'
+import NotificationsPanel from '@/components/NotificationsPanel'
 import ShareButton from '@/components/ShareButton'
 import Footer from '@/components/Footer'
 import { DEFAULT_PARAMS, computeAllocation } from '@/lib/estimation'
@@ -115,6 +116,10 @@ export default function HomePage() {
       >
         <Hero />
 
+        <div className="mt-4">
+          <NotificationsPanel />
+        </div>
+
         <WalletInput onCheck={handleCheck} isLoading={isLoading} />
 
         {/* Loading state */}
@@ -172,6 +177,7 @@ export default function HomePage() {
               allocation={allocation}
               params={params}
               username={username}
+              nfts={metrics.nfts}
             />
           </div>
         )}

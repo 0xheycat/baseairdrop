@@ -17,6 +17,7 @@ interface ShareClientProps {
   initialScore: ActivityScore
   initialMetrics: WalletMetrics
   initialAllocation: AllocationResult
+  initialParams?: ModelParams
   username?: string
   pfpUrl?: string
 }
@@ -26,10 +27,11 @@ export default function ShareClient({
   initialScore,
   initialMetrics,
   initialAllocation,
+  initialParams,
   username,
   pfpUrl,
 }: ShareClientProps) {
-  const [params, setParams] = useState<ModelParams>(DEFAULT_PARAMS)
+  const [params, setParams] = useState<ModelParams>(initialParams ?? DEFAULT_PARAMS)
   const [allocation, setAllocation] = useState(initialAllocation)
 
   const handleParamsChange = useCallback((newParams: ModelParams) => {
@@ -92,6 +94,7 @@ export default function ShareClient({
         score={initialScore}
         allocation={allocation}
         params={params}
+        nfts={initialMetrics.nfts}
       />
 
       <Footer />

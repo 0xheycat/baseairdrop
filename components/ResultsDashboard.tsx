@@ -1,6 +1,6 @@
 'use client'
 
-import { Coins, DollarSign, BarChart3, Percent, Flame, Clock, Code, Wallet, Trophy, Zap } from 'lucide-react'
+import { Coins, DollarSign, BarChart3, Percent, Flame, Clock, Code, Wallet, Trophy, Zap, Award } from 'lucide-react'
 import ScoreRing from './ScoreRing'
 import type { ActivityScore } from '@/lib/scoring'
 import type { WalletMetrics } from '@/lib/blockscout'
@@ -155,6 +155,65 @@ export default function ResultsDashboard({
           />
         </div>
       </div>
+
+      {/* Official Base NFTs */}
+      {metrics.nfts && metrics.nfts.length > 0 && (
+        <div className="glass-card p-4">
+          <h2 className="mb-3.5 text-[10px] font-bold uppercase tracking-[0.15em] text-gray-500">
+            Official Base NFTs
+          </h2>
+          <div className="space-y-2.5">
+            {metrics.nfts.map(nft => {
+              const owned = nft.balance > 0
+              return (
+                <div key={nft.contract} className={`rounded-lg border px-3 py-3 ${owned ? 'border-blue-500/20 bg-blue-500/[0.04]' : 'border-white/[0.04] bg-white/[0.02]'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${owned ? 'bg-blue-500/15' : 'bg-white/[0.04]'}`}>
+                        <Award className={`h-4 w-4 ${owned ? 'text-blue-400' : 'text-gray-600'}`} />
+                      </div>
+                      <div>
+                        <p className="text-[12px] font-semibold text-gray-200">{nft.name}</p>
+                        {nft.symbol && <p className="text-[9px] font-medium text-gray-600">{nft.symbol}</p>}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className={`font-mono text-[14px] font-bold tabular-nums ${owned ? 'text-blue-400' : 'text-gray-600'}`}>
+                        {nft.balance}
+                      </span>
+                      <p className="text-[9px] text-gray-600">owned</p>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 flex items-center gap-3 border-t border-white/[0.04] pt-2.5">
+                    <div className="flex-1">
+                      <p className="text-[9px] uppercase tracking-wider text-gray-600">Holders</p>
+                      <p className="font-mono text-[11px] font-semibold text-gray-400 tabular-nums">
+                        {nft.holders > 0 ? nft.holders.toLocaleString() : '\u2014'}
+                      </p>
+                    </div>
+                    <div className="h-5 w-px bg-white/[0.06]" />
+                    <div className="flex-1">
+                      <p className="text-[9px] uppercase tracking-wider text-gray-600">Total Supply</p>
+                      <p className="font-mono text-[11px] font-semibold text-gray-400 tabular-nums">
+                        {nft.totalSupply > 0 ? nft.totalSupply.toLocaleString() : '\u2014'}
+                      </p>
+                    </div>
+                    <div className="h-5 w-px bg-white/[0.06]" />
+                    <div className="flex-1">
+                      <p className="text-[9px] uppercase tracking-wider text-gray-600">Held</p>
+                      <p className={`font-mono text-[11px] font-semibold tabular-nums ${owned ? 'text-blue-400' : 'text-gray-500'}`}>
+                        {owned && nft.totalSupply > 0
+                          ? `${((nft.balance / nft.totalSupply) * 100).toFixed(3)}%`
+                          : '0%'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Address badge */}
       <div className="flex justify-center pt-1">
