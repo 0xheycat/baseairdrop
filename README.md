@@ -2,7 +2,7 @@
 
 > **Unofficial** Farcaster mini app that analyzes your Base L2 on-chain activity and estimates a hypothetical airdrop allocation.
 
-**Live:** [base-checker.vercel.app](https://base-checker.vercel.app)
+**Live:** [https://baseairdrop-mu.vercel.app/](https://baseairdrop-mu.vercel.app/)
 
 ---
 
