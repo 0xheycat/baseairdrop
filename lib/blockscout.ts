@@ -165,7 +165,7 @@ async function getNftHoldings(address: string): Promise<NftHolder[]> {
     const items = tokenData.items || []
 
     return BASE_NFT_CONTRACTS.map((nft, i) => {
-      const token = items.find((t: any) => t.token?.address?.toLowerCase() === nft.contract.toLowerCase())
+      const token = items.find((t: any) => t.token?.address_hash?.toLowerCase() === nft.contract.toLowerCase())
       const stats = statsResults[i]
       return {
         name: nft.name,

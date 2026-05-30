@@ -15,13 +15,21 @@ interface Notification {
 
 const NOTIFICATIONS: Notification[] = [
   {
+    id: 'nft-score',
+    icon: <Award className="h-3.5 w-3.5 text-amber-400" />,
+    iconBg: 'bg-amber-500/15',
+    title: 'NFT Score Boost',
+    description: 'Holding official Base NFTs now boosts your activity score by up to 20%.',
+    date: 'May 30',
+    isNew: true,
+  },
+  {
     id: 'nft-tracking',
     icon: <Award className="h-3.5 w-3.5 text-blue-400" />,
     iconBg: 'bg-blue-500/15',
     title: 'Official Base NFTs',
     description: 'Now tracking Beta Access & Base Builder NFT holdings with live holder counts.',
     date: 'May 26',
-    isNew: true,
   },
   {
     id: 'og-frames',
@@ -30,7 +38,6 @@ const NOTIFICATIONS: Notification[] = [
     title: 'Rich Share Cards',
     description: 'Improved Farcaster frame previews with score, tier, and allocation data.',
     date: 'May 26',
-    isNew: true,
   },
   {
     id: 'blockscout',

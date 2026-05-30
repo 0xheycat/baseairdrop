@@ -1,6 +1,6 @@
 'use client'
 
-import { Coins, DollarSign, BarChart3, Percent, Flame, Clock, Code, Wallet, Trophy, Zap, Award } from 'lucide-react'
+import { Coins, DollarSign, BarChart3, Percent, Flame, Clock, Code, Wallet, Trophy, Zap, Award, Image } from 'lucide-react'
 import ScoreRing from './ScoreRing'
 import type { ActivityScore } from '@/lib/scoring'
 import type { WalletMetrics } from '@/lib/blockscout'
@@ -152,6 +152,13 @@ export default function ResultsDashboard({
             max={10}
             score={score.balanceScore}
             decimals={4}
+          />
+          <MetricBar
+            icon={<Image className="h-3 w-3 text-gray-500" />}
+            label="Base NFTs"
+            value={metrics.nfts?.filter(n => n.balance > 0).length || 0}
+            max={2}
+            score={score.nftScore}
           />
         </div>
       </div>

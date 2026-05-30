@@ -6,6 +6,7 @@ export interface ActivityScore {
   dayScore: number
   contractScore: number
   balanceScore: number
+  nftScore: number
 }
 
 export function computeActivityScore(metrics: WalletMetrics): ActivityScore {
@@ -14,12 +15,22 @@ export function computeActivityScore(metrics: WalletMetrics): ActivityScore {
   const contractScore = Math.min(metrics.contractCount / 50, 1) * 100
   const balanceScore = Math.min(metrics.ethBalance / 10, 1) * 100
 
+  // NFT score: each official Base NFT held adds significant signal
+  // Holding both = max score, holding one = partial
+  const nftsHeld = metrics.nfts?.filter(n => n.balance > 0).length || 0
+  const nftScore = Math.min(nftsHeld / BASE_NFT_CONTRACTS.length, 1) * 100
+
   const overall = Math.round(
-    txScore * 0.35 + dayScore * 0.30 + contractScore * 0.20 + balanceScore * 0.15
+    txScore * 0.30 + dayScore * 0.25 + contractScore * 0.15 + balanceScore * 0.10 + nftScore * 0.20
   )
 
-  return { overall, txScore, dayScore, contractScore, balanceScore }
+  return { overall, txScore, dayScore, contractScore, balanceScore, nftScore }
 }
+
+const BASE_NFT_CONTRACTS = [
+  '0xe3EB165C9ED6D6D87A59C410C8F30bABac44FeFD',
+  '0x8DC80A209A3362f0586e6C116973Bb6908170c84',
+]
 
 export function getScoreLabel(score: number): string {
   if (score >= 80) return 'Excellent'
